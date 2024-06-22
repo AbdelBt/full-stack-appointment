@@ -1,0 +1,4 @@
+.disabled-day {
+    color: red;
+    text-decoration: line-through;
+  }
