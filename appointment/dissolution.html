@@ -34,14 +34,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
         integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <!-- Intégration de Calendly -->
-    <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
-    <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
-
 </head>
 
 <body>
+    <div id="root" class="hidden"></div>
 
     <!-- Header -->
     <header id="header">
@@ -80,10 +76,8 @@
                     </h2>
                     <p>un traitement efficace pour la réduction ciblée des graisses dans tout le corps.
                     </p>
-                    <a class="button" href="#"
-                        onclick="Calendly.initPopupWidget({url: 'https://calendly.com/beautyfrenchhm'});return false;">Je
-                        réserve (accompte)
-                    </a>
+                    <a class="button" href="#" id="myButton">
+                        réserver !</a>
                 </div>
             </div>
         </section>
@@ -217,6 +211,8 @@
     <script src="libs/scrollreveal.min.js"></script>
     <!-- Scripts -->
     <script src="main.js"></script>
+    <script src="src/main.jsx" type="module"></script>
+
 
 </body>
 

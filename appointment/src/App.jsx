@@ -385,7 +385,7 @@ function App() {
                       <Input
                         type="firstName"
                         id="firstName"
-                        placeholder="firstName"
+                        placeholder="Prénom"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                       />
@@ -410,7 +410,7 @@ function App() {
                         <Input
                           type="name"
                           id="name"
-                          placeholder="name"
+                          placeholder="Nom"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                         />
