@@ -2,3 +2,7 @@
     color: red;
     text-decoration: line-through;
   }
+  .react-tel-input .form-control{
+    width: 100% !important;
+    border-color: hsl(var(--input)) !important;
+  }

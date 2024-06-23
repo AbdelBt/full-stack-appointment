@@ -79,57 +79,29 @@ app.get('/success', async (req, res) => {
         // Vérifiez si la session a été payée avec succès
         if (session.payment_status !== 'paid') {
             return res.status(400).json({ error: 'Le paiement n\'a pas été effectué avec succès.' });
+        } else {
+            const reservationData = JSON.parse(session.metadata.reservationData);
+            // Récupérer et traiter les données de réservation à partir des métadonnées
+            const processedReservationData = {
+                service: reservationData.service,
+                description: reservationData.description,
+                date: reservationData.date,
+                timeSlot: reservationData.timeSlot,
+                clientName: reservationData.clientName,
+                clientFirstname: reservationData.clientFirstname,
+                clientEmail: session.customer_details.email,
+                phoneNumber: reservationData.phoneNumber,
+                paymentIntentId: session.payment_intent,
+            };
+
+            // Renvoyer les données de réservation en réponse
+            res.json({ reservation: processedReservationData });
         }
 
-        const reservationData = JSON.parse(session.metadata.reservationData);
-        // Récupérer et traiter les données de réservation à partir des métadonnées
-        const processedReservationData = {
-            service: reservationData.service,
-            date: reservationData.date,
-            timeSlot: reservationData.timeSlot,
-            clientName: reservationData.clientName,
-            clientFirstname: reservationData.clientFirstname,
-            clientEmail: session.customer_details.email,
-            phoneNumber: reservationData.phoneNumber,
-            paymentIntentId: session.payment_intent,
-        };
 
-        // Renvoyer les données de réservation en réponse
-        res.json({ reservation: processedReservationData });
     } catch (error) {
         console.error('Error fetching payment details:', error);
         res.status(500).json({ error: 'Failed to fetch payment details' });
-    }
-});
-app.post('/confirm-payment', async (req, res) => {
-    console.log('confirm-paymen:');
-    try {
-        const { paymentIntentId } = req.body;
-
-        // Vérifier l'état du paiement avec Stripe
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-
-        if (paymentIntent.status === 'succeeded') {
-            console.log('Reservation Data:', reservationData);
-            console.log('Paiement réussi pour la session:', sessionId);
-            const reservationData = JSON.parse(session.metadata.reservationData);
-
-            // Le paiement a été réussi, maintenant créer la réservation
-            const { data: reservationResponse } = await axios.post(
-                "http://localhost:3000/reserve", // Endpoint de votre backend pour créer la réservation
-                reservationData
-            );
-            console.log('Reservation created:', reservationResponse);
-
-            res.json({ success: true, reservation: reservationResponse.data });
-        } else {
-            res.status(400).json({ error: 'Le paiement n\'a pas été réussi' });
-        }
-
-    } catch (error) {
-        console.error('Erreur lors de la confirmation du paiement:', error);
-        res.status(500).json({ error: 'Échec de la confirmation du paiement' });
     }
 });
 

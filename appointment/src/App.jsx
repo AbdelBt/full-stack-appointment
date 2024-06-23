@@ -4,6 +4,8 @@ import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { loadStripe } from "@stripe/stripe-js";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,41 +47,38 @@ function App() {
   const sessionId = urlParams.get("session_id");
 
   const fetchReservationData = async () => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/success?session_id=${sessionId}`
-      );
-      const reservationData = response.data.reservation; // Les données récupérées depuis le backend
+    if (window.location.href.includes("success")) {
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/success?session_id=${sessionId}`
+        );
+        const reservationData = response.data.reservation; // Les données récupérées depuis le backend
 
-      // Formatage de la date pour affichage
-      const formattedDate = new Date(reservationData.date);
-      const formattedDateString = formattedDate.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-      });
+        // Formatage de la date pour affichage
+        const formattedDate = new Date(reservationData.date);
+        const formattedDateString = formattedDate.toLocaleDateString("fr-FR", {
+          month: "long",
+          day: "numeric",
+        });
 
-      // Message de toast personnalisé pour le client
-      const message = `Your reservation for ${reservationData.service} on ${formattedDateString} at ${reservationData.timeSlot} has been successfully created.`;
+        const message = `Votre réservation pour ${reservationData.service} le ${formattedDateString} à ${reservationData.timeSlot} a été planifié. Un mail de confirmation vous a été envoyé.`;
 
-      console.log("Reservation Data:", reservationData);
-      const postResponse = await axios.post(
-        "http://localhost:3000/reserve",
-        reservationData
-      );
+        console.log("Reservation Data:", reservationData);
+        await axios.post("http://localhost:3000/reserve", reservationData);
 
-      console.log("Reservation successfully created:", postResponse.data);
-      fetchUnavailableDays();
+        fetchUnavailableDays();
 
-      // Afficher un toast de succès
-      toast({
-        title: "Payment Successful",
-        description: message,
-        status: "success",
-        className: "bg-[#e4d7cc]",
-      });
-    } catch (error) {
-      console.error("Error fetching reservation data:", error);
-      // Gérer les erreurs de récupération des données de réservation
+        // Afficher un toast de succès
+        toast({
+          title: "Paiement réussi",
+          description: message,
+          status: "success",
+          className: "bg-[#e4d7cc]",
+        });
+      } catch (error) {
+        console.error("Error fetching reservation data:", error);
+        // Gérer les erreurs de récupération des données de réservation
+      }
     }
   };
   useEffect(() => {
@@ -112,10 +111,25 @@ function App() {
     };
   }, []);
 
+  const [services, setServices] = useState([]);
   const [date, setDate] = useState(null);
   const [timeSlot, setTimeSlot] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState();
   const [unavailableDays, setUnavailableDays] = useState([]);
+
+  useEffect(() => {
+    // Fonction pour récupérer les services depuis l'API
+    const fetchServices = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/services");
+        setServices(response.data);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   useEffect(() => {
     fetchUnavailableDays();
@@ -203,6 +217,7 @@ function App() {
   };
 
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [firstName, setFirstName] = useState("");
   const [service, setService] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -226,13 +241,14 @@ function App() {
         {
           reservationData: {
             service: service,
+            description: description,
             date: formattedDate,
             timeSlot: selectedTimeSlot,
             clientName: name,
             clientFirstname: firstName,
             phoneNumber: formattedPhoneNumber,
           },
-          amount: 1000, // Montant à payer en cents
+          amount: 3000, // Montant à payer en cents
           currency: "eur", // Devise
         }
       );
@@ -262,7 +278,7 @@ function App() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              <div className="text-center">Reserve Now!</div>
+              <div className="text-center">Réservation</div>
             </AlertDialogTitle>
             <AlertDialogDescription>
               <div>
@@ -283,7 +299,7 @@ function App() {
                           d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
                         />
                       </svg>
-                      Select Date
+                      Sélectionnez la date
                     </div>
                     <Calendar
                       mode="single"
@@ -294,26 +310,6 @@ function App() {
                       disabled={(day) => isPastDay(day)}
                       className="rounded-md border"
                     />
-
-                    <Select
-                      value={service}
-                      onValueChange={(value) => setService(value)}
-                    >
-                      <Label htmlFor="service">Service</Label>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Services</SelectLabel>
-                          <SelectItem value="service1">Service 1</SelectItem>
-                          <SelectItem value="service2">Service 2</SelectItem>
-                          <SelectItem value="service3">Service 3</SelectItem>
-                          <SelectItem value="service4">Service 4</SelectItem>
-                          <SelectItem value="service5">Service 5</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
                   </div>
                   <div className="mt-3 md:mt-0">
                     <div className="flex gap-2 items-center mb-3">
@@ -331,9 +327,9 @@ function App() {
                           d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                         />
                       </svg>
-                      Select Time Slot
+                      Sélectionnez le créneau horaire
                     </div>
-                    <div className="grid grid-cols-3 gap-2 border rounded-lg p-5">
+                    <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 mt-5">
                       {timeSlot?.map((item, index) => (
                         <div
                           onClick={() => {
@@ -356,8 +352,36 @@ function App() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <div className="md:flex justify-between">
+                    <div className="mt-5 text-left">
+                      <Select
+                        value={service}
+                        onValueChange={(value) => setService(value)}
+                      >
+                        <Label htmlFor="service">Service</Label>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select a service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Services</SelectLabel>
+                            {services.map((serviceItem) => (
+                              <SelectItem
+                                key={serviceItem.id}
+                                value={serviceItem.name}
+                              >
+                                {serviceItem.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                      <Label htmlFor="name">First name</Label>
+                      <Label htmlFor="name">Prénom </Label>
                       <Input
                         type="firstName"
                         id="firstName"
@@ -366,32 +390,49 @@ function App() {
                         onChange={(e) => setFirstName(e.target.value)}
                       />
                     </div>
+                  </div>
+                  <div className="flex flex-col justify-between md:gap-5  ">
+                    <div className="flex flex-col-reverse md:flex-row  justify-between md:gap-5">
+                      {" "}
+                      <div className="mt-5 max-w-sm text-left">
+                        <Label htmlFor="name">Numéro de téléphone </Label>
+                        <PhoneInput
+                          inputProps={{
+                            name: "phone",
+                            required: true,
+                            autoFocus: true,
+                          }}
+                          onChange={(value) => setPhoneNumber(value)}
+                        />
+                      </div>
+                      <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                        <Label htmlFor="name">Nom</Label>
+                        <Input
+                          type="name"
+                          id="name"
+                          placeholder="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                      <Label htmlFor="name">Last name</Label>
-                      <Input
-                        type="name"
-                        id="name"
-                        placeholder="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                      <Label htmlFor="message">Note</Label>
+                      <Textarea
+                        placeholder="Note ..."
+                        id="message"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                       />
                     </div>
-                    <PhoneInput
-                      className="mt-5"
-                      inputProps={{
-                        name: "phone",
-                        required: true,
-                        autoFocus: true,
-                      }}
-                      onChange={(value) => setPhoneNumber(value)}
-                    />
                   </div>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-between">
-            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogCancel>Fermez</AlertDialogCancel>
             <AlertDialogAction
               disabled={
                 !(
@@ -405,7 +446,7 @@ function App() {
               }
               onClick={handleSubmit}
             >
-              Submit
+              Continuer !
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
