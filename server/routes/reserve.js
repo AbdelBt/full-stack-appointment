@@ -14,8 +14,45 @@ const transporter = nodemailer.createTransport({
 });
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const getAvailableEmployeForTimeSlot = async (date, timeSlot) => {
+    try {
+        // Récupérer tous les utilisateurs
+        const { data: allUsers, error: fetchUsersError } = await supabase.auth.admin.listUsers()
+
+        if (fetchUsersError) {
+            throw new Error(`Erreur lors de la récupération des utilisateurs: ${fetchUsersError.message}`);
+        }
+
+        // Parcourir tous les employés pour trouver un employé disponible
+        for (const user of allUsers.users) {
+            // Vérifier s'il existe des indisponibilités pour cet employé à ce créneau horaire
+            const { data: existingIndisponibilities, error: fetchError } = await supabase
+                .from("indisponibilites")
+                .select("*")
+                .eq("jour", date)
+                .eq("heure", timeSlot)
+                .eq("employe_id", user.id);
+
+            if (fetchError) {
+                throw fetchError;
+            }
+
+            // S'il n'y a pas d'indisponibilités, cet employé est disponible
+            if (existingIndisponibilities.length === 0) {
+                return user.id; // Retourner l'ID du premier employé disponible
+            }
+        }
+
+        return null; // Aucun employé disponible trouvé
+    } catch (error) {
+        console.error('Erreur lors de la recherche de l\'employé disponible :', error.message);
+        throw error; // Lancer l'erreur pour la gérer plus haut
+    }
+};
+
 
 // Route POST pour créer une réservation
 router.post("/", async (req, res) => {
@@ -31,7 +68,7 @@ router.post("/", async (req, res) => {
             description,
         } = req.body;
 
-        const paymentIntentId = req.body.paymentIntentId; // Supposons que vous recevez l'ID du paiement depuis le frontend
+        const paymentIntentId = req.body.paymentIntentId;
 
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -39,25 +76,12 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ error: "Le paiement n'a pas été réussi." });
         }
 
-        // Vérifier si la date et l'heure sont déjà marquées comme indisponibles
-        const { data: existingIndisponibilities, error: fetchError } =
-            await supabase
-                .from("indisponibilites")
-                .select("*")
-                .eq("jour", date)
-                .eq("heure", timeSlot);
+        const employeId = await getAvailableEmployeForTimeSlot(date, timeSlot);
 
-        if (fetchError) {
-            throw fetchError;
+        if (!employeId) {
+            return res.status(400).json({ error: "Aucun employé disponible pour ce créneau." });
         }
 
-        if (existingIndisponibilities.length > 0) {
-            return res
-                .status(400)
-                .json({
-                    error: "La date et l'heure spécifiées sont déjà indisponibles.",
-                });
-        }
 
         // Insérer la réservation dans la table des réservations
         const { data: reservationData, error: reservationError } = await supabase
@@ -73,6 +97,7 @@ router.post("/", async (req, res) => {
                     client_phone: phoneNumber,
                     status: "pending",
                     client_firstname: clientFirstname,
+                    employe_id: employeId,
                 },
             ]);
 
@@ -85,6 +110,7 @@ router.post("/", async (req, res) => {
                 {
                     jour: date,
                     heure: timeSlot,
+                    employe_id: employeId,
                 },
             ]);
 

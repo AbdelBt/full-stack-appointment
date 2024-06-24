@@ -41,53 +41,71 @@ const stripe = await stripePromise;
 
 function App() {
   const { toast } = useToast();
+  const [reservationCompleted, setReservationCompleted] = useState(true);
 
-  // Récupérer le session_id depuis l'URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const sessionId = urlParams.get("session_id");
-
-  const fetchReservationData = async () => {
-    if (window.location.href.includes("success")) {
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/success?session_id=${sessionId}`
-        );
-        const reservationData = response.data.reservation; // Les données récupérées depuis le backend
-
-        // Formatage de la date pour affichage
-        const formattedDate = new Date(reservationData.date);
-        const formattedDateString = formattedDate.toLocaleDateString("fr-FR", {
-          month: "long",
-          day: "numeric",
-        });
-
-        const message = `Votre réservation pour ${reservationData.service} le ${formattedDateString} à ${reservationData.timeSlot} a été planifié. Un mail de confirmation vous a été envoyé.`;
-
-        console.log("Reservation Data:", reservationData);
-        await axios.post("http://localhost:3000/reserve", reservationData);
-
-        fetchUnavailableDays();
-
-        // Afficher un toast de succès
-        toast({
-          title: "Paiement réussi",
-          description: message,
-          status: "success",
-          className: "bg-[#e4d7cc]",
-        });
-      } catch (error) {
-        console.error("Error fetching reservation data:", error);
-        // Gérer les erreurs de récupération des données de réservation
-      }
-    }
-  };
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchReservationData();
-    }, 500); // ajustez la durée du délai en millisecondes selon vos besoins
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get("session_id");
+
+    const fetchReservationData = async () => {
+      if (window.location.href.includes("success")) {
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/success?session_id=${sessionId}`
+          );
+          const reservationData = response.data.reservation;
+
+          // Formatage de la date pour affichage
+          const formattedDate = new Date(reservationData.date);
+          const formattedDateString = formattedDate.toLocaleDateString(
+            "fr-FR",
+            {
+              month: "long",
+              day: "numeric",
+            }
+          );
+
+          const message = `Votre réservation pour ${reservationData.service} le ${formattedDateString} à ${reservationData.timeSlot} a été planifiée. Un mail de confirmation vous a été envoyé.`;
+
+          console.log("Reservation Data:", reservationData);
+
+          const reservationCompleted =
+            sessionStorage.getItem("reservationCompleted") === "true";
+
+          if (!reservationCompleted) {
+            // Soumettre la réservation au backend
+            await axios.post("http://localhost:3000/reserve", reservationData);
+            // Mettre à jour reservationCompleted dans sessionStorage
+            sessionStorage.setItem("reservationCompleted", true);
+
+            toast({
+              title: "Paiement réussi",
+              description: message,
+              status: "success",
+              className: "bg-[#e4d7cc]",
+            });
+
+            sessionStorage.setItem("reservationCompleted", true);
+          }
+
+          // Mettre à jour les jours non disponibles
+          fetchUnavailableDays();
+
+          sessionStorage.setItem("reservationCompleted", "true");
+
+          // Mettre à jour l'état local pour éviter les soumissions multiples
+          setReservationCompleted(true);
+        } catch (error) {
+          console.error("Error fetching reservation data:", error);
+          // Gérer les erreurs de récupération des données de réservation
+        }
+      }
+    };
+
+    const timer = setTimeout(fetchReservationData, 500); // Ajustez la durée du délai en millisecondes selon vos besoins
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [toast, reservationCompleted]);
 
   useEffect(() => {
     const handleButtonClick = () => {
@@ -138,6 +156,9 @@ function App() {
   useEffect(() => {
     if (date) {
       getTime(date);
+      if (isTimeUnavailableForDate(selectedTimeSlot, date)) {
+        setSelectedTimeSlot(null);
+      }
     }
   }, [date, unavailableDays]);
 
@@ -153,19 +174,32 @@ function App() {
   };
 
   const isTimeUnavailableForDate = (time, date) => {
-    if (!date) return false; // Vérifie si date est null, dans ce cas, retourne false
-    return unavailableDays.some((unavailable) => {
-      const unavailableDate = new Date(unavailable.jour);
-      const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
-      const isSameMonth = date.getMonth() === unavailableDate.getMonth();
-      const isSameDay = date.getDate() === unavailableDate.getDate();
-      return (
-        isSameYear &&
-        isSameMonth &&
-        isSameDay &&
-        time === unavailable.heure.split(":")[0] + ":00"
-      );
+    if (!date) return false;
+
+    // Récupérer la liste unique des employés
+    const employeeIds = [
+      ...new Set(unavailableDays.map((unavailable) => unavailable.employe_id)),
+    ];
+
+    // Vérifier si tous les employés sont occupés à la date et heure données
+    const allEmployeesUnavailable = employeeIds.every((employe_id) => {
+      const isUnavailable = unavailableDays.some((unavailable) => {
+        const unavailableDate = new Date(unavailable.jour);
+        const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
+        const isSameMonth = date.getMonth() === unavailableDate.getMonth();
+        const isSameDay = date.getDate() === unavailableDate.getDate();
+        const isSameTime = time === unavailable.heure.split(":")[0] + ":00";
+        const isSameEmployee = employe_id === unavailable.employe_id;
+
+        return (
+          isSameYear && isSameMonth && isSameDay && isSameTime && isSameEmployee
+        );
+      });
+
+      return isUnavailable;
     });
+
+    return allEmployeesUnavailable;
   };
 
   const fetchUnavailableDays = async () => {
@@ -234,6 +268,7 @@ function App() {
       .toString()
       .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
     const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+    sessionStorage.setItem("reservationCompleted", false);
 
     try {
       const sessionResponse = await axios.post(
@@ -391,7 +426,7 @@ function App() {
                       />
                     </div>
                   </div>
-                  <div className="flex flex-col justify-between md:gap-5  ">
+                  <div className="flex flex-col justify-between   ">
                     <div className="flex flex-col-reverse md:flex-row  justify-between md:gap-5">
                       {" "}
                       <div className="mt-5 max-w-sm text-left">
