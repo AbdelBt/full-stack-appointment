@@ -1,6 +1,7 @@
 const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const cron = require("node-cron");
 
 const router = express.Router();
 const nodemailer = require("nodemailer");
@@ -30,10 +31,10 @@ const getAvailableEmployeForTimeSlot = async (date, timeSlot) => {
         for (const user of allUsers.users) {
             // Vérifier s'il existe des indisponibilités pour cet employé à ce créneau horaire
             const { data: existingIndisponibilities, error: fetchError } = await supabase
-                .from("indisponibilites")
+                .from("reservations")
                 .select("*")
-                .eq("jour", date)
-                .eq("heure", timeSlot)
+                .eq("date", date)
+                .eq("time_slot", timeSlot)
                 .eq("employe_id", user.id);
 
             if (fetchError) {
@@ -103,19 +104,6 @@ router.post("/", async (req, res) => {
 
         if (reservationError) throw reservationError;
 
-        // Insérer la date réservée dans la table des indisponibilités
-        const { data: unavailableData, error: unavailableError } = await supabase
-            .from("indisponibilites")
-            .insert([
-                {
-                    jour: date,
-                    heure: timeSlot,
-                    employe_id: employeId,
-                },
-            ]);
-
-        if (unavailableError) throw unavailableError;
-
         const formattedDate = new Date(date);
         const formattedDateString = formattedDate.toLocaleDateString("fr-FR", {
             month: "long",
@@ -170,13 +158,29 @@ router.post("/", async (req, res) => {
 // Route GET pour récupérer les réservations
 router.get("/", async (req, res) => {
     try {
+        const { data: allUsers, error: fetchUsersError } = await supabase.auth.admin.listUsers()
+
+        if (fetchUsersError) {
+            throw new Error(`Erreur lors de la récupération des utilisateurs: ${fetchUsersError.message}`);
+        }
+
         const { data: reservations, error } = await supabase
             .from("reservations")
             .select("*");
 
         if (error) throw error;
 
-        res.status(200).json(reservations);
+        // Construire un tableau d'IDs uniques d'employés à partir des reservation
+        const employeeIdsFromIndisponibilites = [...new Set(reservations.map(reservation => reservation.employe_id))];
+
+        // Construire un tableau d'IDs uniques d'employés à partir de tous les utilisateurs
+        const allEmployeeIds = allUsers.users.map(user => user.id);
+
+        // Fusionner les IDs d'employés pour s'assurer que tous les IDs uniques sont inclus
+        const uniqueEmployeeIds = [...new Set([...allEmployeeIds, ...employeeIdsFromIndisponibilites])];
+
+
+        res.status(200).json({ reservations: reservations, employeeIds: uniqueEmployeeIds });
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ message: "Server Error" });
@@ -240,6 +244,30 @@ router.delete("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error deleting reservation:", error.message);
         res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// Tâche planifiée pour supprimer les réservations plus de 2 mois
+cron.schedule("0 0 1 * *", async () => { // Exécuter à minuit le 1er de chaque mois
+    try {
+        // Calculer la date limite (2 mois avant la date actuelle)
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+        // Convertir en format ISO pour la comparaison avec la base de données
+        const formattedDate = twoMonthsAgo.toISOString();
+
+        // Supprimer les réservations qui ont une date antérieure à twoMonthsAgo
+        const { data, error } = await supabase
+            .from("reservations")
+            .delete()
+            .lt("date", formattedDate);
+
+        if (error) throw error;
+
+        console.log("Réservations plus de 2 mois supprimées avec succès:", data);
+    } catch (error) {
+        console.error("Erreur lors de la suppression des réservations plus de 2 mois :", error.message);
     }
 });
 

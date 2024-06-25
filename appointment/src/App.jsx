@@ -42,6 +42,7 @@ const stripe = await stripePromise;
 function App() {
   const { toast } = useToast();
   const [reservationCompleted, setReservationCompleted] = useState(true);
+  const [employeeIds, setEmployeeIds] = useState([]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -156,7 +157,7 @@ function App() {
   useEffect(() => {
     if (date) {
       getTime(date);
-      if (isTimeUnavailableForDate(selectedTimeSlot, date)) {
+      if (isTimeUnavailableForDate(selectedTimeSlot, date, employeeIds)) {
         setSelectedTimeSlot(null);
       }
     }
@@ -164,31 +165,26 @@ function App() {
 
   const getTime = () => {
     const timeList = [];
-    for (let i = 8; i < 23; i++) {
+    for (let i = 8; i < 22; i++) {
       const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
       const time = hour + ":00";
-      const isUnavailable = isTimeUnavailableForDate(time, date);
+      const isUnavailable = isTimeUnavailableForDate(time, date, employeeIds);
       timeList.push({ time, isUnavailable });
     }
     setTimeSlot(timeList);
   };
 
-  const isTimeUnavailableForDate = (time, date) => {
+  const isTimeUnavailableForDate = (time, date, employeeIds) => {
     if (!date) return false;
-
-    // Récupérer la liste unique des employés
-    const employeeIds = [
-      ...new Set(unavailableDays.map((unavailable) => unavailable.employe_id)),
-    ];
 
     // Vérifier si tous les employés sont occupés à la date et heure données
     const allEmployeesUnavailable = employeeIds.every((employe_id) => {
       const isUnavailable = unavailableDays.some((unavailable) => {
-        const unavailableDate = new Date(unavailable.jour);
+        const unavailableDate = new Date(unavailable.date);
         const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
         const isSameMonth = date.getMonth() === unavailableDate.getMonth();
         const isSameDay = date.getDate() === unavailableDate.getDate();
-        const isSameTime = time === unavailable.heure.split(":")[0] + ":00";
+        const isSameTime = time === unavailable.time_slot.split(":")[0] + ":00";
         const isSameEmployee = employe_id === unavailable.employe_id;
 
         return (
@@ -204,10 +200,11 @@ function App() {
 
   const fetchUnavailableDays = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/indisponibilities"
-      );
-      setUnavailableDays(response.data);
+      const response = await axios.get("http://localhost:3000/reserve");
+      const { reservations, employeeIds } = response.data;
+
+      setUnavailableDays(reservations);
+      setEmployeeIds(employeeIds);
     } catch (error) {
       console.error("Error fetching unavailable days:", error);
     }
@@ -241,7 +238,7 @@ function App() {
 
   useEffect(() => {
     if (unavailableDays.length > 0) {
-      const initialDate = getNextAvailableDate(new Date());
+      const initialDate = getNextAvailableDate(new Date(+1));
       setDate(initialDate);
     }
   }, [unavailableDays, getNextAvailableDate]);
@@ -336,15 +333,17 @@ function App() {
                       </svg>
                       Sélectionnez la date
                     </div>
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(selectedDate) => {
-                        setDate(selectedDate);
-                      }}
-                      disabled={(day) => isPastDay(day)}
-                      className="rounded-md border"
-                    />
+                    <div className="md:block md:w-auto flex w-full justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(selectedDate) => {
+                          setDate(selectedDate);
+                        }}
+                        disabled={(day) => isPastDay(day)}
+                        className="rounded-md border"
+                      />
+                    </div>
                   </div>
                   <div className="mt-3 md:mt-0">
                     <div className="flex gap-2 items-center mb-3">

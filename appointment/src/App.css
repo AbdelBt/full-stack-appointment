@@ -6,3 +6,12 @@
     width: 100% !important;
     border-color: hsl(var(--input)) !important;
   }
+
+
+  tbody tr{
+    justify-content: space-between;
+  }
+  thead tr{
+    justify-content: space-between;
+
+  }
