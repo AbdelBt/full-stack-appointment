@@ -52,7 +52,7 @@ function App() {
       if (window.location.href.includes("success")) {
         try {
           const response = await axios.get(
-            `http://localhost:3000/success?session_id=${sessionId}`
+            `https://appointment-fr.onrender.com/success?session_id=${sessionId}`
           );
           const reservationData = response.data.reservation;
 
@@ -75,7 +75,10 @@ function App() {
 
           if (!reservationCompleted) {
             // Soumettre la réservation au backend
-            await axios.post("http://localhost:3000/reserve", reservationData);
+            await axios.post(
+              "https://appointment-fr.onrender.com/reserve",
+              reservationData
+            );
             // Mettre à jour reservationCompleted dans sessionStorage
             sessionStorage.setItem("reservationCompleted", true);
 
@@ -140,7 +143,9 @@ function App() {
     // Fonction pour récupérer les services depuis l'API
     const fetchServices = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/services");
+        const response = await axios.get(
+          "https://appointment-fr.onrender.com/services"
+        );
         setServices(response.data);
       } catch (error) {
         console.error("Error fetching services:", error);
@@ -200,7 +205,9 @@ function App() {
 
   const fetchUnavailableDays = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/reserve");
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/reserve"
+      );
       const { reservations, employeeIds } = response.data;
 
       setUnavailableDays(reservations);
@@ -269,7 +276,7 @@ function App() {
 
     try {
       const sessionResponse = await axios.post(
-        "http://localhost:3000/create-checkout-session",
+        "https://appointment-fr.onrender.com/create-checkout-session",
         {
           reservationData: {
             service: service,
