@@ -38,8 +38,6 @@ const Admin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(email, password);
-
     try {
       // Appel à l'API pour créer un compte
       await axios.post("http://localhost:3000/user/signup", {
@@ -146,7 +144,9 @@ const Admin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  Password <br />( should be at least 6 characters)
+                </Label>
                 <Input
                   id="password"
                   type="password"

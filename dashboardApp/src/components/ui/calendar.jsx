@@ -10,10 +10,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 w-full flex justify-center", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
+        months:
+          "flex flex-col w-full sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        month: "space-y-4 w-full",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
@@ -24,7 +25,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
-        head_row: "flex",
+        head_row: "flex text-center",
         head_cell:
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
@@ -39,7 +40,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         day_today: "bg-accent text-accent-foreground",
         day_outside:
           "day-outside text-muted-foreground opacity-50  aria-selected:text-muted-foreground aria-selected:opacity-30 ",
-        day_disabled: "text-muted-foreground opacity-50",
+        day_disabled: "text-red-600", // Changer la classe CSS pour les jours désactivés en rouge
         day_range_middle:
           "aria-selected:bg-accent  aria-selected:text-accent-foreground",
         day_hidden: "invisible",

@@ -74,8 +74,16 @@ th{
 }
 
 .sideb{
-  background-image: url(./assets/image.png);
+  background-image: url(./assets/Fichier1.png);
   background-position: left bottom;
   background-size: 100%;
   background-repeat: no-repeat;
+}
+
+tbody tr{
+  justify-content: space-between;
+}
+thead tr{
+  justify-content: space-between;
+
 }

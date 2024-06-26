@@ -7,10 +7,11 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    service: "hotmail",
+    host: 'smtp.office365.com',
+    port: 587,
     auth: {
         user: "abdella.boutaarourt@hotmail.com",
-        pass: "abdel-9600",
+        pass: process.env.EMAIL_PASS,
     },
 });
 // Supabase configuration
@@ -35,7 +36,7 @@ const getAvailableEmployeForTimeSlot = async (date, timeSlot) => {
                 .select("*")
                 .eq("date", date)
                 .eq("time_slot", timeSlot)
-                .eq("employe_id", user.id);
+                .eq("employe_email", user.email);
 
             if (fetchError) {
                 throw fetchError;
@@ -43,7 +44,7 @@ const getAvailableEmployeForTimeSlot = async (date, timeSlot) => {
 
             // S'il n'y a pas d'indisponibilités, cet employé est disponible
             if (existingIndisponibilities.length === 0) {
-                return user.id; // Retourner l'ID du premier employé disponible
+                return user.email; // Retourner l'ID du premier employé disponible
             }
         }
 
@@ -77,9 +78,9 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ error: "Le paiement n'a pas été réussi." });
         }
 
-        const employeId = await getAvailableEmployeForTimeSlot(date, timeSlot);
+        const email = await getAvailableEmployeForTimeSlot(date, timeSlot);
 
-        if (!employeId) {
+        if (!email) {
             return res.status(400).json({ error: "Aucun employé disponible pour ce créneau." });
         }
 
@@ -98,7 +99,7 @@ router.post("/", async (req, res) => {
                     client_phone: phoneNumber,
                     status: "pending",
                     client_firstname: clientFirstname,
-                    employe_id: employeId,
+                    employe_email: email,
                 },
             ]);
 
@@ -155,6 +156,94 @@ router.post("/", async (req, res) => {
     }
 });
 
+
+// Route POST pour créer une réservation
+router.post("/appointment", async (req, res) => {
+    try {
+        const {
+            service,
+            date,
+            timeSlot,
+            clientName,
+            clientEmail,
+            clientFirstname,
+            phoneNumber,
+            description,
+        } = req.body;
+
+
+        const email = await getAvailableEmployeForTimeSlot(date, timeSlot);
+
+        if (!email) {
+            return res.status(400).json({ error: "Aucun employé disponible pour ce créneau." });
+        }
+
+        const { data: reservationData, error: reservationError } = await supabase
+            .from("reservations")
+            .insert([
+                {
+                    service: service,
+                    date: date,
+                    description: description,
+                    time_slot: timeSlot,
+                    client_name: clientName,
+                    client_email: clientEmail,
+                    client_phone: phoneNumber,
+                    status: "pending",
+                    client_firstname: clientFirstname,
+                    employe_email: email,
+                },
+            ]);
+
+        if (reservationError) throw reservationError;
+
+        const formattedDate = new Date(date);
+        const formattedDateString = formattedDate.toLocaleDateString("fr-FR", {
+            month: "long",
+            day: "numeric",
+        });
+
+        const mailOptions = {
+            from: "abdella.boutaarourt@hotmail.com",
+            to: clientEmail,
+            subject: "Confirmation de réservation",
+            html: `
+            <html>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                <h1>Bonjour ${clientFirstname} ${clientName}</h1>
+                <p>Votre réservation pour ${service} le ${formattedDateString} à ${timeSlot} a été planifiée.</p>
+                <p style="font-weight:bold">Détails de la réservation :</p>
+                <ul>
+                  <li>Service : ${service}</li>
+                  <li>Date : ${date}</li>
+                  <li>Heure : ${timeSlot}</li>
+                  <li>Description : ${description}</li>
+                </ul>
+                <p>Merci de nous avoir choisis.</p>
+                <p>Cordialement,<br>L'équipe House Of Beauty</p>
+                <div style="text-align: center;">
+                  <img src="https://i.goopics.net/lr3a9d.png" alt="Logo" style="max-width: 200px;">
+                </div>
+              </body>
+            </html>
+          `,
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("Erreur lors de l'envoi de l'e-mail:", error);
+            } else {
+                console.log("E-mail envoyé:", info.response);
+            }
+        });
+
+        res.status(201).json({ message: "Reservation created successfully", reservationData });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
 // Route GET pour récupérer les réservations
 router.get("/", async (req, res) => {
     try {
@@ -171,10 +260,10 @@ router.get("/", async (req, res) => {
         if (error) throw error;
 
         // Construire un tableau d'IDs uniques d'employés à partir des reservation
-        const employeeIdsFromIndisponibilites = [...new Set(reservations.map(reservation => reservation.employe_id))];
+        const employeeIdsFromIndisponibilites = [...new Set(reservations.map(reservation => reservation.employe_email))];
 
         // Construire un tableau d'IDs uniques d'employés à partir de tous les utilisateurs
-        const allEmployeeIds = allUsers.users.map(user => user.id);
+        const allEmployeeIds = allUsers.users.map(user => user.email);
 
         // Fusionner les IDs d'employés pour s'assurer que tous les IDs uniques sont inclus
         const uniqueEmployeeIds = [...new Set([...allEmployeeIds, ...employeeIdsFromIndisponibilites])];
@@ -192,10 +281,38 @@ router.post("/:id/status", async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
+        // Récupérer la réservation actuelle
+        const { data: currentReservation, error: fetchReservationError } = await supabase
+            .from("reservations")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (fetchReservationError) {
+            throw fetchReservationError;
+        }
+
+
+
+        let updateData = { status: status };
+
+
+        if (status === "cancelled") {
+            // Si le statut est "cancelled", libérer l'employé en mettant employe_id à null
+            updateData.employe_email = null;
+        } else if ((status === "pending" || status === "confirmed") && !currentReservation.employe_email) {
+            // Si le statut est "pending" ou "confirm" et qu'aucun employé n'est assigné, trouver un employé disponible
+            const email = await getAvailableEmployeForTimeSlot(currentReservation.date, currentReservation.time_slot);
+            if (!email) {
+                return res.status(400).json({ error: "Aucun employé disponible pour ce créneau." });
+            }
+            updateData.employe_email = email;
+        }
+
         // Mettre à jour le statut de la réservation dans la table des réservations
         const { data: updatedReservation, error } = await supabase
             .from("reservations")
-            .update({ status: status })
+            .update(updateData)
             .eq("id", id);
 
         if (error) throw error;

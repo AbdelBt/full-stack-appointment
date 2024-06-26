@@ -1,3 +1,5 @@
+import React from "react";
+
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import {
@@ -9,6 +11,14 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
+  Phone,
+  Mail,
+  CalendarCheck2,
+  CircleUser,
+  HandPlatter,
+  Info,
+} from "lucide-react";
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -18,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Clock2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "./datePickerRange";
 
@@ -54,6 +64,8 @@ export default function DataTableDemo() {
   const [data, setData] = useState([]);
   const [dateRange, setDateRange] = useState({ from: null, to: null });
   const [filteredData, setFilteredData] = useState([]);
+  const [services, setServices] = useState([]);
+  const [expandedRowId, setExpandedRowId] = useState(null);
 
   useEffect(() => {
     const user = sessionStorage.getItem("user");
@@ -67,8 +79,8 @@ export default function DataTableDemo() {
       try {
         const response = await axios.get("http://localhost:3000/reserve"); // Remplacez l'URL par celle de votre backend
 
-        setData(response.data); // Met à jour l'état avec les données récupérées depuis axios
-        console.log(response.data);
+        setData(response.data.reservations); // Met à jour l'état avec les données récupérées depuis axios
+        console.log(response.data.reservations);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
       }
@@ -82,38 +94,84 @@ export default function DataTableDemo() {
       return [];
     }
 
-    const toEndDate = new Date(toDate);
-    toEndDate.setHours(23, 59, 59, 999);
+    const fromDateTime = new Date(fromDate);
+    const toDateTime = new Date(toDate);
+
+    // Adjust fromDateTime to the start of the day
+    fromDateTime.setHours(0, 0, 0, 0);
+
+    // Adjust toDateTime to the end of the day
+    toDateTime.setHours(23, 59, 59, 999);
 
     return data.filter((item) => {
-      const itemDate = new Date(item.date);
-      return itemDate >= new Date(fromDate) && itemDate <= new Date(toEndDate);
+      const itemDateTime = new Date(item.date);
+      // Adjust itemDateTime to the start of the day for comparison
+      itemDateTime.setHours(0, 0, 0, 0);
+
+      return itemDateTime >= fromDateTime && itemDateTime <= toDateTime;
     });
   };
+
+  useEffect(() => {
+    // Fonction pour récupérer les services depuis l'API
+    const fetchServices = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/services");
+        setServices(response.data);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   const columns = [
     {
       accessorKey: "time_slot",
       header: "Time",
       cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("time_slot")}</div>
+        <div className="lowercase flex justify-between">
+          <Clock2 />
+          {row.getValue("time_slot")}
+          <p className="w-6"></p>
+        </div>
       ),
-      sortingFn: (rowA, rowB, columnId) => {
+      sortingFn: (rowA, rowB, columnId, desc) => {
         const timeA = new Date(rowA.original[columnId]);
         const timeB = new Date(rowB.original[columnId]);
-        return timeA - timeB;
+
+        return desc ? timeB - timeA : timeA - timeB;
       },
     },
     {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status");
-        return (
-          <div className={`status-cell ${status}`}>
-            {status && status.toUpperCase()}
-          </div>
-        );
+      accessorKey: "date",
+      header: ({ column }) => (
+        <Button
+          variant="secondary"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div>{new Date(row.original.date).toLocaleDateString()}</div>
+      ),
+      sortingFn: (rowA, rowB, columnId, desc) => {
+        const dateA = new Date(rowA.original[columnId]);
+        const dateB = new Date(rowB.original[columnId]);
+
+        // Compare dates first
+        if (dateA.getTime() !== dateB.getTime()) {
+          return desc ? dateB - dateA : dateA - dateB;
+        } else {
+          // If dates are the same, compare times
+          const timeA = new Date(rowA.original["time_slot"]);
+          const timeB = new Date(rowB.original["time_slot"]);
+
+          return desc ? timeB - timeA : timeA - timeB;
+        }
       },
     },
     {
@@ -130,22 +188,22 @@ export default function DataTableDemo() {
         );
       },
       cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("client_email")}</div>
+        <div className="lowercase">
+          <div className="font-bold">{row.original.client_name}</div>
+          <div className="text-xs	">{row.getValue("client_email")}</div>
+        </div>
       ),
     },
     {
-      accessorKey: "amount",
-      header: () => <div className="text-right">Amount</div>,
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => {
-        const amount = parseFloat(row.getValue("amount"));
-
-        // Format the amount as a dollar amount
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(amount);
-
-        return <div className="text-right font-medium">{formatted}</div>;
+        const status = row.getValue("status");
+        return (
+          <div className={`status-cell ${status}`}>
+            {status && status.toUpperCase()}
+          </div>
+        );
       },
     },
     {
@@ -157,6 +215,9 @@ export default function DataTableDemo() {
         const [service, setService] = useState(payment.service);
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const { toast } = useToast();
+        {
+          row.getValue("service");
+        }
 
         const updateService = async (reservationId, newService) => {
           try {
@@ -200,35 +261,15 @@ export default function DataTableDemo() {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Services</SelectLabel>
-                <SelectItem value="service1">Service 1</SelectItem>
-                <SelectItem value="service2">Service 2</SelectItem>
-                <SelectItem value="service3">Service 3</SelectItem>
-                <SelectItem value="service4">Service 4</SelectItem>
-                <SelectItem value="service5">Service 5</SelectItem>
+                {services.map((serviceItem) => (
+                  <SelectItem key={serviceItem.id} value={serviceItem.name}>
+                    {serviceItem.name}
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
         );
-      },
-    },
-    {
-      accessorKey: "date",
-      header: ({ column }) => (
-        <Button
-          variant="secondary"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div>{new Date(row.original.date).toLocaleDateString()}</div>
-      ),
-      sortingFn: (rowA, rowB, columnId) => {
-        const dateA = new Date(rowA.original[columnId]);
-        const dateB = new Date(rowB.original[columnId]);
-        return dateA - dateB;
       },
     },
 
@@ -238,7 +279,7 @@ export default function DataTableDemo() {
       cell: ({ row }) => {
         const payment = row.original;
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        const [status, setStatus] = useState(payment.status);
+        const [status] = useState(payment.status);
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const { toast } = useToast();
 
@@ -314,7 +355,9 @@ export default function DataTableDemo() {
                 Delete
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>View customer</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toggleRowExpansion(row.id)}>
+                View customer
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <Select
                 value={status}
@@ -373,6 +416,9 @@ export default function DataTableDemo() {
     }
   }, [data, dateRange]);
 
+  const toggleRowExpansion = (rowId) => {
+    setExpandedRowId(rowId === expandedRowId ? null : rowId);
+  };
   return (
     <div className=" text-white mx-5 h-screen" style={{ width: "100%" }}>
       <Toaster />
@@ -454,19 +500,84 @@ export default function DataTableDemo() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="cursor-pointer"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {expandedRowId === row.id && (
+                    <TableRow>
+                      <TableCell colSpan={columns.length}>
+                        <div className="p-4">
+                          <ul className="list-none pl-0 space-y-3">
+                            <li className="flex items-start ">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <CalendarCheck2 /> &nbsp; Time:
+                              </span>
+                              <span className="font-bold  text-white">
+                                {new Date(row.original.date).toLocaleDateString(
+                                  "fr-FR",
+                                  { month: "long", day: "numeric" }
+                                )}
+                                &nbsp;à {row.original.time_slot}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <HandPlatter /> &nbsp; Service:
+                              </span>
+                              <span className="font-bold  text-white">
+                                {row.original.service}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <Info /> &nbsp; info:
+                              </span>
+                              <span className="font-bold  text-white">
+                                {row.original.description}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <CircleUser /> &nbsp; Name:
+                              </span>
+                              <span className="font-bold  text-white">
+                                {row.original.client_name}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <Mail /> &nbsp; Email:&nbsp;
+                              </span>
+                              <span className="font-bold  text-white">
+                                {row.original.client_email}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="flex font-bold	  min-w-[120px] text-white">
+                                <Phone /> &nbsp; Phone:
+                              </span>
+                              <span className="font-bold  text-white">
+                                {row.original.client_phone}
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <TableRow>

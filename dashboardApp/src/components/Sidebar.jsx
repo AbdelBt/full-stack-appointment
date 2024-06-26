@@ -53,6 +53,8 @@ export default function Sidebar({ handleLogout }) {
   const [name, setName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [service, setService] = useState("");
+  const [services, setServices] = useState([]);
+
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
 
@@ -60,13 +62,15 @@ export default function Sidebar({ handleLogout }) {
   const [timeSlot, setTimeSlot] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState();
   const [unavailableDays, setUnavailableDays] = useState([]);
+  const [employeeIds, setEmployeeIds] = useState([]);
 
   const fetchUnavailableDays = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/indisponibilities"
-      );
-      setUnavailableDays(response.data);
+      const response = await axios.get("http://localhost:3000/reserve");
+      const { reservations, employeeIds } = response.data;
+
+      setUnavailableDays(reservations);
+      setEmployeeIds(employeeIds);
     } catch (error) {
       console.error("Error fetching unavailable days:", error);
     }
@@ -83,9 +87,24 @@ export default function Sidebar({ handleLogout }) {
     return number;
   };
 
+  // Fonction pour récupérer les services depuis l'API
+  const fetchServices = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/services");
+      setServices(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
   const getTime = () => {
     const timeList = [];
-    for (let i = 8; i < 23; i++) {
+    for (let i = 9; i <= 21; i++) {
       const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
       const time = hour + ":00";
       const isUnavailable = isTimeUnavailableForDate(time, date);
@@ -96,23 +115,33 @@ export default function Sidebar({ handleLogout }) {
   useEffect(() => {
     if (date) {
       getTime(date);
+      if (isTimeUnavailableForDate(selectedTimeSlot, date, employeeIds)) {
+        setSelectedTimeSlot(null);
+      }
     }
   }, [date, unavailableDays]);
 
   const isTimeUnavailableForDate = (time, date) => {
     if (!date) return false; // Vérifie si date est null, dans ce cas, retourne false
-    return unavailableDays.some((unavailable) => {
-      const unavailableDate = new Date(unavailable.jour);
-      const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
-      const isSameMonth = date.getMonth() === unavailableDate.getMonth();
-      const isSameDay = date.getDate() === unavailableDate.getDate();
-      return (
-        isSameYear &&
-        isSameMonth &&
-        isSameDay &&
-        time === unavailable.heure.split(":")[0] + ":00"
-      );
+
+    const allEmployeesUnavailable = employeeIds.every((employe_email) => {
+      const isUnavailable = unavailableDays.some((unavailable) => {
+        const unavailableDate = new Date(unavailable.date);
+        const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
+        const isSameMonth = date.getMonth() === unavailableDate.getMonth();
+        const isSameDay = date.getDate() === unavailableDate.getDate();
+        const isSameTime = time === unavailable.time_slot.split(":")[0] + ":00";
+        const isSameEmployee = employe_email === unavailable.employe_email;
+
+        return (
+          isSameYear && isSameMonth && isSameDay && isSameTime && isSameEmployee
+        );
+      });
+
+      return isUnavailable;
     });
+
+    return allEmployeesUnavailable;
   };
   const handleSubmit = async () => {
     const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
@@ -131,19 +160,16 @@ export default function Sidebar({ handleLogout }) {
       description
     );
     try {
-      const postResponse = await axios.post(
-        "http://localhost:3000/reserve/appointment",
-        {
-          clientEmail: email,
-          service: service,
-          date: formattedDate,
-          timeSlot: selectedTimeSlot,
-          clientName: name,
-          clientFirstname: firstName,
-          phoneNumber: formattedPhoneNumber,
-          description: description,
-        }
-      );
+      await axios.post("http://localhost:3000/reserve/appointment", {
+        clientEmail: email,
+        service: service,
+        date: formattedDate,
+        timeSlot: selectedTimeSlot,
+        clientName: name,
+        clientFirstname: firstName,
+        phoneNumber: formattedPhoneNumber,
+        description: description,
+      });
       const dateObject = new Date(formattedDate);
 
       // Vérifiez si dateObject est valide
@@ -158,8 +184,17 @@ export default function Sidebar({ handleLogout }) {
 
       const message = `Your reservation for ${service} on ${formattedDateString} at ${selectedTimeSlot} has been successfully created.`;
 
-      console.log("Reservation successfully created:", postResponse.data);
       fetchUnavailableDays();
+
+      // Réinitialiser les états nécessaires après l'ajout du rendez-vous
+      setDate(null);
+      setSelectedTimeSlot(null);
+      setEmail("");
+      setFirstName("");
+      setName("");
+      setPhoneNumber("");
+      setDescription("");
+      setService("");
 
       // Afficher un toast de succès
       toast({
@@ -198,13 +233,14 @@ export default function Sidebar({ handleLogout }) {
         {
           link: "/Dashboard",
           icon: <LayoutDashboard />,
-          text: "Dashboard",
+          text: "Appointments",
         },
         {
           link: "/Calender",
           icon: <CalendarCheck />,
           text: "Calender",
         },
+
         {
           link: "/Admin",
           icon: <Lock />,
@@ -271,7 +307,14 @@ export default function Sidebar({ handleLogout }) {
         </Command>
         <Sheet className="mt-10">
           <SheetTrigger asChild>
-            <Button variant="outline" className="text-white mt-5">
+            <Button
+              variant="outline"
+              className="text-white mt-5"
+              onClick={() => {
+                fetchUnavailableDays();
+                fetchServices();
+              }}
+            >
               {" "}
               <Plus /> New Appointment
             </Button>
@@ -281,7 +324,7 @@ export default function Sidebar({ handleLogout }) {
               <SheetTitle>New Appointment</SheetTitle>
             </SheetHeader>
             <div>
-              <div className=" flex grid-cols-1 md:grid-cols-2 mt-5 gap-6">
+              <div className=" grid grid-cols-1 md:grid-cols-2 mt-5 gap-6">
                 <div className="flex flex-col gap-3 items-baseline">
                   <div className="flex gap-2 items-center">
                     <svg
@@ -300,18 +343,20 @@ export default function Sidebar({ handleLogout }) {
                     </svg>
                     Select Date
                   </div>
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(selectedDate) => {
-                      setDate(selectedDate);
-                    }}
-                    disabled={(day) => isPastDay(day)}
-                    className="rounded-md border"
-                  />
+                  <div className="md:block md:w-auto flex w-full justify-center">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(selectedDate) => {
+                        setDate(selectedDate);
+                      }}
+                      disabled={(day) => isPastDay(day)}
+                      className="rounded-md border"
+                    />
+                  </div>
                 </div>
-                <div className="mt-3 md:mt-0">
-                  <div className="flex gap-2 items-center mb-3">
+                <div className="flex flex-col gap-3 items-baseline">
+                  <div className="flex gap-2 items-center">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -328,7 +373,7 @@ export default function Sidebar({ handleLogout }) {
                     </svg>
                     Select Time Slot
                   </div>
-                  <div className="grid grid-cols-3 gap-2 border rounded-lg p-5">
+                  <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
                     {timeSlot?.map((item, index) => (
                       <div
                         onClick={() => {
@@ -337,15 +382,17 @@ export default function Sidebar({ handleLogout }) {
                         }}
                         key={index}
                         className={`
-      p-2 cursor-pointer border rounded-full text-center
-      ${
-        item.isUnavailable
-          ? "bg-red-300 text-gray-600 cursor-not-allowed hover:"
-          : item.time === selectedTimeSlot
-          ? "bg-primary text-white"
-          : ""
-      }
-    `}
+
+                          p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center
+
+                          ${
+                            item.isUnavailable
+                              ? "bg-red-300 text-gray-600 cursor-not-allowed hover:"
+                              : item.time === selectedTimeSlot
+                              ? "bg-primary text-white"
+                              : ""
+                          }
+  `}
                       >
                         {item.time}
                       </div>
@@ -406,25 +453,30 @@ export default function Sidebar({ handleLogout }) {
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              <Select
-                value={service}
-                onValueChange={(value) => setService(value)}
-              >
-                <Label htmlFor="service">Service</Label>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select a service" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Services</SelectLabel>
-                    <SelectItem value="service1">Service 1</SelectItem>
-                    <SelectItem value="service2">Service 2</SelectItem>
-                    <SelectItem value="service3">Service 3</SelectItem>
-                    <SelectItem value="service4">Service 4</SelectItem>
-                    <SelectItem value="service5">Service 5</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <div className="mt-5 text-left">
+                <Select
+                  value={service}
+                  onValueChange={(value) => setService(value)}
+                >
+                  <Label htmlFor="service">Service</Label>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select a service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Services</SelectLabel>
+                      {services.map((serviceItem) => (
+                        <SelectItem
+                          key={serviceItem.id}
+                          value={serviceItem.name}
+                        >
+                          {serviceItem.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <SheetFooter>
               <SheetClose asChild>

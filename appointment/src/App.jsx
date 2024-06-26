@@ -165,7 +165,7 @@ function App() {
 
   const getTime = () => {
     const timeList = [];
-    for (let i = 8; i < 22; i++) {
+    for (let i = 9; i <= 21; i++) {
       const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
       const time = hour + ":00";
       const isUnavailable = isTimeUnavailableForDate(time, date, employeeIds);
@@ -178,14 +178,14 @@ function App() {
     if (!date) return false;
 
     // Vérifier si tous les employés sont occupés à la date et heure données
-    const allEmployeesUnavailable = employeeIds.every((employe_id) => {
+    const allEmployeesUnavailable = employeeIds.every((employe_email) => {
       const isUnavailable = unavailableDays.some((unavailable) => {
         const unavailableDate = new Date(unavailable.date);
         const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
         const isSameMonth = date.getMonth() === unavailableDate.getMonth();
         const isSameDay = date.getDate() === unavailableDate.getDate();
         const isSameTime = time === unavailable.time_slot.split(":")[0] + ":00";
-        const isSameEmployee = employe_id === unavailable.employe_id;
+        const isSameEmployee = employe_email === unavailable.employe_email;
 
         return (
           isSameYear && isSameMonth && isSameDay && isSameTime && isSameEmployee
@@ -229,7 +229,7 @@ function App() {
     (startDate) => {
       let nextDate = new Date(startDate);
       while (isPastDay(nextDate) || isDayUnavailable(nextDate)) {
-        nextDate.setDate(nextDate.getDate() + 1);
+        nextDate.setDate(nextDate.getDate() + 2);
       }
       return nextDate;
     },
@@ -345,8 +345,8 @@ function App() {
                       />
                     </div>
                   </div>
-                  <div className="mt-3 md:mt-0">
-                    <div className="flex gap-2 items-center mb-3">
+                  <div className="flex flex-col gap-3 items-baseline">
+                    <div className="flex gap-2 items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -363,7 +363,7 @@ function App() {
                       </svg>
                       Sélectionnez le créneau horaire
                     </div>
-                    <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 mt-5">
+                    <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
                       {timeSlot?.map((item, index) => (
                         <div
                           onClick={() => {
@@ -372,14 +372,16 @@ function App() {
                           }}
                           key={index}
                           className={`
-      p-2 cursor-pointer border rounded-full text-center
-      ${
-        item.isUnavailable
-          ? "bg-red-300 text-gray-600 cursor-not-allowed hover:"
-          : item.time === selectedTimeSlot
-          ? "bg-primary text-white"
-          : ""
-      }
+
+                            p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center
+
+                            ${
+                              item.isUnavailable
+                                ? "bg-red-300 text-gray-600 cursor-not-allowed hover:"
+                                : item.time === selectedTimeSlot
+                                ? "bg-primary text-white"
+                                : ""
+                            }
     `}
                         >
                           {item.time}

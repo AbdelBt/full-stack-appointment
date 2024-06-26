@@ -45,7 +45,7 @@ export default function Calendar() {
     try {
       const response = await fetch("http://localhost:3000/reserve"); // Assurez-vous que l'URL correspond à votre configuration backend
       const data = await response.json();
-      const formattedEvents = data.map((reservation) => ({
+      const formattedEvents = data.reservations.map((reservation) => ({
         title: `${reservation.service} - ${reservation.client_firstname}`,
         start: `${reservation.date}T${reservation.time_slot}`,
         time: `${reservation.time_slot}`,
@@ -175,7 +175,7 @@ export default function Calendar() {
       {/* FullCalendar */}
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-        initialView="dayGridMonth"
+        initialView="listWeek"
         slotLabelFormat={{
           hour: "2-digit",
           minute: "2-digit",
@@ -183,12 +183,12 @@ export default function Calendar() {
           meridiem: false,
         }}
         headerToolbar={{
-          start: "title",
-          center: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-          end: "today prev,next",
+          start: "today prev,next",
+          center: "title",
+          end: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
         }}
         events={events}
-        height="100%" // Définir la hauteur de FullCalendar à 100%
+        height="100%"
         selectable={true} // Permet la sélection de plage de dates
         eventClick={handleEventClick} // Gérer le clic sur un événement
       />
