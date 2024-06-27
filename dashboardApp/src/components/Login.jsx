@@ -50,15 +50,13 @@ function Login({ setIsAuthenticated }) {
 
         // Redirection vers le dashboard après connexion réussie
         navigate("/Dashboard");
-      } else {
-        // Gérer les erreurs (par exemple, afficher un message d'erreur)
-        toast({
-          variant: "destructive",
-          description: "Login failed. Please try again.",
-        });
       }
     } catch (err) {
       console.error("Error during login:", err);
+      toast({
+        variant: "destructive",
+        description: "Login failed. Please try again.",
+      });
     }
   };
 
