@@ -218,7 +218,7 @@ function App() {
   const isDayUnavailable = useCallback(
     (day) => {
       const unavailableDates = unavailableDays.map(
-        (unavailableDay) => new Date(unavailableDay.jour)
+        (unavailableDay) => new Date(unavailableDay.date)
       );
       return unavailableDates.some((unavailableDate) => {
         const isSameYear = day.getFullYear() === unavailableDate.getFullYear();
@@ -234,7 +234,7 @@ function App() {
     (startDate) => {
       let nextDate = new Date(startDate);
       while (isPastDay(nextDate) || isDayUnavailable(nextDate)) {
-        nextDate.setDate(nextDate.getDate() + 2);
+        nextDate.setDate(nextDate.getDate() + 1);
       }
       return nextDate;
     },

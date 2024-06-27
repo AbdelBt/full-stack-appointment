@@ -40,7 +40,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       // Appel à l'API pour créer un compte
-      await axios.post("https://chatapp-bex0.onrender.com/user/signup", {
+      await axios.post("https://appointment-fr.onrender.com/user/signup", {
         email,
         password,
       });
