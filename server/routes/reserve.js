@@ -7,10 +7,13 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    service: "outlook",
+    service: "gmail",
+    host: "smtp-gmail.com",
+    port: 587,
+    secure: false,
     auth: {
-        user: "abdella.boutaarourt@hotmail.com",
-        pass: process.env.EMAIL_PASS,
+        user: "deevwebhb@gmail.com",
+        pass: process.env.APP_PASSWORD,
     },
 });
 // Supabase configuration
@@ -112,7 +115,10 @@ router.post("/", async (req, res) => {
 
         // Configurer l'e-mail de confirmation
         const mailOptions = {
-            from: "abdella.boutaarourt@hotmail.com",
+            from: {
+                name: "House Of Beauty",
+                address: "abdella.boutaarourt@hotmail.com"
+            },
             to: clientEmail,
             subject: "Confirmation de réservation",
             html: `
