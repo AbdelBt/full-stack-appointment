@@ -7,7 +7,7 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    service: 'Hotmail',
+    service: "outlook",
     auth: {
         user: "abdella.boutaarourt@hotmail.com",
         pass: process.env.EMAIL_PASS,
