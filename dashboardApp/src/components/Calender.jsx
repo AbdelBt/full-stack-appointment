@@ -43,7 +43,9 @@ export default function Calendar() {
 
   const fetchReservations = async () => {
     try {
-      const response = await fetch("https://chatapp-bex0.onrender.com/reserve"); // Assurez-vous que l'URL correspond à votre configuration backend
+      const response = await fetch(
+        "https://appointment-fr.onrender.com/reserve"
+      ); // Assurez-vous que l'URL correspond à votre configuration backend
       const data = await response.json();
       const formattedEvents = data.reservations.map((reservation) => ({
         title: `${reservation.service} - ${reservation.client_firstname}`,

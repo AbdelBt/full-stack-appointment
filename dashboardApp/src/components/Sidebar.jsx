@@ -67,7 +67,7 @@ export default function Sidebar({ handleLogout }) {
   const fetchUnavailableDays = async () => {
     try {
       const response = await axios.get(
-        "https://chatapp-bex0.onrender.com/reserve"
+        "https://appointment-fr.onrender.com/reserve"
       );
       const { reservations, employeeIds } = response.data;
 
@@ -93,7 +93,7 @@ export default function Sidebar({ handleLogout }) {
   const fetchServices = async () => {
     try {
       const response = await axios.get(
-        "https://chatapp-bex0.onrender.com/services"
+        "https://appointment-fr.onrender.com/services"
       );
       setServices(response.data);
       console.log(response.data);
@@ -165,7 +165,7 @@ export default function Sidebar({ handleLogout }) {
     );
     try {
       await axios.post(
-        "https://chatapp-bex0.onrender.com/reserve/appointment",
+        "https://appointment-fr.onrender.com/reserve/appointment",
         {
           clientEmail: email,
           service: service,
