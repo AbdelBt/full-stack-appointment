@@ -7,8 +7,7 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com',
-    port: 587,
+    service: 'Hotmail',
     auth: {
         user: "abdella.boutaarourt@hotmail.com",
         pass: process.env.EMAIL_PASS,
