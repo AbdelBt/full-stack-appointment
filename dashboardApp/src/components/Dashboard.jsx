@@ -78,7 +78,7 @@ export default function DataTableDemo() {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          "http://appointment-fr.onrender.com/reserve"
+          "https://appointment-fr.onrender.com/reserve"
         ); // Remplacez l'URL par celle de votre backend
 
         setData(response.data.reservations); // Met à jour l'état avec les données récupérées depuis axios
@@ -119,7 +119,7 @@ export default function DataTableDemo() {
     const fetchServices = async () => {
       try {
         const response = await axios.get(
-          "http://appointment-fr.onrender.com/services"
+          "https://appointment-fr.onrender.com/services"
         );
         setServices(response.data);
       } catch (error) {
@@ -226,7 +226,7 @@ export default function DataTableDemo() {
         const updateService = async (reservationId, newService) => {
           try {
             await axios.post(
-              `http://appointment-fr.onrender.com/reserve/${reservationId}/service`,
+              `https://appointment-fr.onrender.com/reserve/${reservationId}/service`,
               { service: newService }
             );
 
@@ -291,7 +291,7 @@ export default function DataTableDemo() {
         const updateStatus = async (reservationId, newStatus) => {
           try {
             await axios.post(
-              `http://appointment-fr.onrender.com/reserve/${reservationId}/status`,
+              `https://appointment-fr.onrender.com/reserve/${reservationId}/status`,
               { status: newStatus }
             );
             // Update state or refresh data if needed
@@ -318,7 +318,7 @@ export default function DataTableDemo() {
         const deleteReservation = async (reservationId) => {
           try {
             await axios.delete(
-              `http://appointment-fr.onrender.com/reserve/${reservationId}`
+              `https://appointment-fr.onrender.com/reserve/${reservationId}`
             );
 
             // Remove the deleted reservation from the state
