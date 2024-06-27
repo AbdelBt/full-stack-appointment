@@ -33,9 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
-const stripePromise = loadStripe(
-  "pk_test_51OtHIvEkbJQNOSQZeyjvF3b9Ib5viQ2s4wctDyQacfgbTaaXszsFxDszo9kVpzdUdg9e5HZHtr0d3hg8I9L7PBJL00k4A1NYF1"
-);
+const stripePromise = loadStripe("pk_live_vzCRUbkde5AIW9Jf00WjY3yf");
 
 const stripe = await stripePromise;
 
