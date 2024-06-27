@@ -40,7 +40,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       // Appel à l'API pour créer un compte
-      await axios.post("http://localhost:3000/user/signup", {
+      await axios.post("https://chatapp-bex0.onrender.com/user/signup", {
         email,
         password,
       });
@@ -61,7 +61,9 @@ const Admin = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/services");
+      const response = await axios.get(
+        "https://chatapp-bex0.onrender.com/services"
+      );
       setServices(response.data);
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -79,7 +81,7 @@ const Admin = () => {
     }
 
     try {
-      await axios.post("http://localhost:3000/services", {
+      await axios.post("https://chatapp-bex0.onrender.com/services", {
         name: newService,
       });
       fetchServices();
@@ -96,7 +98,7 @@ const Admin = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/services/${id}`);
+      await axios.delete(`https://chatapp-bex0.onrender.com/services/${id}`);
       setServices(services.filter((service) => service.id !== id));
       console.log(services.filter((service) => service.id !== id));
       toast({

@@ -66,7 +66,9 @@ export default function Sidebar({ handleLogout }) {
 
   const fetchUnavailableDays = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/reserve");
+      const response = await axios.get(
+        "https://chatapp-bex0.onrender.com/reserve"
+      );
       const { reservations, employeeIds } = response.data;
 
       setUnavailableDays(reservations);
@@ -90,7 +92,9 @@ export default function Sidebar({ handleLogout }) {
   // Fonction pour récupérer les services depuis l'API
   const fetchServices = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/services");
+      const response = await axios.get(
+        "https://chatapp-bex0.onrender.com/services"
+      );
       setServices(response.data);
       console.log(response.data);
     } catch (error) {
@@ -160,16 +164,19 @@ export default function Sidebar({ handleLogout }) {
       description
     );
     try {
-      await axios.post("http://localhost:3000/reserve/appointment", {
-        clientEmail: email,
-        service: service,
-        date: formattedDate,
-        timeSlot: selectedTimeSlot,
-        clientName: name,
-        clientFirstname: firstName,
-        phoneNumber: formattedPhoneNumber,
-        description: description,
-      });
+      await axios.post(
+        "https://chatapp-bex0.onrender.com/reserve/appointment",
+        {
+          clientEmail: email,
+          service: service,
+          date: formattedDate,
+          timeSlot: selectedTimeSlot,
+          clientName: name,
+          clientFirstname: firstName,
+          phoneNumber: formattedPhoneNumber,
+          description: description,
+        }
+      );
       const dateObject = new Date(formattedDate);
 
       // Vérifiez si dateObject est valide

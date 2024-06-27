@@ -77,7 +77,9 @@ export default function DataTableDemo() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/reserve"); // Remplacez l'URL par celle de votre backend
+        const response = await axios.get(
+          "https://chatapp-bex0.onrender.com/reserve"
+        ); // Remplacez l'URL par celle de votre backend
 
         setData(response.data.reservations); // Met à jour l'état avec les données récupérées depuis axios
         console.log(response.data.reservations);
@@ -116,7 +118,9 @@ export default function DataTableDemo() {
     // Fonction pour récupérer les services depuis l'API
     const fetchServices = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/services");
+        const response = await axios.get(
+          "https://chatapp-bex0.onrender.com/services"
+        );
         setServices(response.data);
       } catch (error) {
         console.error("Error fetching services:", error);
@@ -222,7 +226,7 @@ export default function DataTableDemo() {
         const updateService = async (reservationId, newService) => {
           try {
             await axios.post(
-              `http://localhost:3000/reserve/${reservationId}/service`,
+              `https://chatapp-bex0.onrender.com/reserve/${reservationId}/service`,
               { service: newService }
             );
 
@@ -287,7 +291,7 @@ export default function DataTableDemo() {
         const updateStatus = async (reservationId, newStatus) => {
           try {
             await axios.post(
-              `http://localhost:3000/reserve/${reservationId}/status`,
+              `https://chatapp-bex0.onrender.com/reserve/${reservationId}/status`,
               { status: newStatus }
             );
             // Update state or refresh data if needed
@@ -314,7 +318,7 @@ export default function DataTableDemo() {
         const deleteReservation = async (reservationId) => {
           try {
             await axios.delete(
-              `http://localhost:3000/reserve/${reservationId}`
+              `https://chatapp-bex0.onrender.com/reserve/${reservationId}`
             );
 
             // Remove the deleted reservation from the state
