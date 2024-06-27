@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
@@ -20,6 +20,15 @@ function Login({ setIsAuthenticated }) {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = sessionStorage.getItem("user");
+    if (!user) {
+      navigate("/");
+    } else {
+      navigate("/calender");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
