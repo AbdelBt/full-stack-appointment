@@ -43,7 +43,7 @@ const Admin = () => {
   const fetchDays = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/indisponibilities"
+        "https://appointment-fr.onrender.com/indisponibilities"
       );
       if (response.data.length > 0) {
         // eslint-disable-next-line no-unused-vars
@@ -63,10 +63,13 @@ const Admin = () => {
       [day]: updatedState,
     }));
     try {
-      await axios.post("http://localhost:3000/indisponibilities", {
-        day: day.charAt(0).toUpperCase() + day.slice(1),
-        value: updatedState,
-      });
+      await axios.post(
+        "https://appointment-fr.onrender.com/indisponibilities",
+        {
+          day: day.charAt(0).toUpperCase() + day.slice(1),
+          value: updatedState,
+        }
+      );
       toast({
         description: `Day ${
           updatedState ? "added to" : "removed from"
