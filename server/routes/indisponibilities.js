@@ -23,4 +23,38 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Update indisponibility
+router.post('/', async (req, res) => {
+    const { day, value } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('indisponibilites')
+            .update({ [day.toLowerCase()]: value })
+            .match({ id: 1 }); // assuming single row for simplicity
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
+// Update an indisponibility
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { day } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('indisponibilites')
+            .update({ day })
+            .eq('id', id);
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

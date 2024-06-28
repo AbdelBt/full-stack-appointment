@@ -96,7 +96,6 @@ export default function Sidebar({ handleLogout }) {
         "https://appointment-fr.onrender.com/services"
       );
       setServices(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error("Error fetching services:", error);
     }
