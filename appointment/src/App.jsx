@@ -50,7 +50,7 @@ function App() {
       if (window.location.href.includes("success")) {
         try {
           const response = await axios.get(
-            `http://localhost:3000/success?session_id=${sessionId}`
+            `https://appointment-fr.onrender.com/success?session_id=${sessionId}`
           );
           const reservationData = response.data.reservation;
 
