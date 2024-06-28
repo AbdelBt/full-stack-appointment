@@ -42,6 +42,9 @@ app.post('/create-checkout-session', async (req, res) => {
                         currency,
                         product_data: {
                             name: 'Reservation',
+                            description: `${reservationData.service} - ${reservationData.description}`,
+                            images: ['https://yourdomain.com/path/to/logo.png'], // URL de votre logo
+
                         },
                         unit_amount: amount,
                     },
