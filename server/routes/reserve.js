@@ -369,15 +369,15 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-// Tâche planifiée pour supprimer les réservations plus de 2 mois
+// Tâche planifiée pour supprimer les réservations plus de 18 mois
 cron.schedule("0 0 1 * *", async () => { // Exécuter à minuit le 1er de chaque mois
     try {
-        // Calculer la date limite (2 mois avant la date actuelle)
+        // Calculer la date limite (18 mois avant la date actuelle)
         const eighteenMonthsAgo = new Date();
         eighteenMonthsAgo.setMonth(eighteenMonthsAgo.getMonth() - 18);
 
         // Convertir en format ISO pour la comparaison avec la base de données
-        const formattedDate = twoMonthsAgo.toISOString();
+        const formattedDate = eighteenMonthsAgo.toISOString();
 
         // Supprimer les réservations qui ont une date antérieure à twoMonthsAgo
         const { data, error } = await supabase
