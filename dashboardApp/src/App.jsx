@@ -6,6 +6,8 @@ import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import Sidebar from "./components/Sidebar";
 import Calender from "./components/Calender";
+import Company from "./components/Company";
+
 import Admin from "./components/Admin";
 
 function App() {
@@ -38,6 +40,10 @@ function App() {
             <Route
               path="/Calender"
               element={<Calender setIsAuthenticated={setIsAuthenticated} />}
+            />
+            <Route
+              path="/Company"
+              element={<Company setIsAuthenticated={setIsAuthenticated} />}
             />
             <Route
               path="/Admin"

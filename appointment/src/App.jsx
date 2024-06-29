@@ -41,6 +41,25 @@ function App() {
   const { toast } = useToast();
   const [reservationCompleted, setReservationCompleted] = useState(true);
   const [employeeIds, setEmployeeIds] = useState([]);
+  const [Days, setDays] = useState([]);
+
+  useEffect(() => {
+    fetchDays();
+  }, []);
+  const fetchDays = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/indisponibilities"
+      );
+      if (response.data.length > 0) {
+        // eslint-disable-next-line no-unused-vars
+        const { id, ...days } = response.data[0]; // Exclure l'ID
+        setDays(days); // Mettre à jour l'état avec les jours non disponibles
+      }
+    } catch (error) {
+      console.error("Error fetching unavailable days:", error);
+    }
+  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -215,38 +234,27 @@ function App() {
     }
   };
 
-  const isDayUnavailable = useCallback(
+  const isDay = useCallback(
     (day) => {
-      const unavailableDates = unavailableDays.map(
-        (unavailableDay) => new Date(unavailableDay.date)
-      );
-      return unavailableDates.some((unavailableDate) => {
-        const isSameYear = day.getFullYear() === unavailableDate.getFullYear();
-        const isSameMonth = day.getMonth() === unavailableDate.getMonth();
-        const isSameDay = day.getDate() === unavailableDate.getDate();
-        return isSameYear && isSameMonth && isSameDay;
-      });
-    },
-    [unavailableDays]
-  );
+      const dayOfWeek = day.getDay(); // Obtenir le jour de la semaine (0: dimanche, 1: lundi, ..., 6: samedi)
+      const daysMap = {
+        0: "sunday",
+        1: "monday",
+        2: "tuesday",
+        3: "wednesday",
+        4: "thursday",
+        5: "friday",
+        6: "saturday",
+      };
 
-  const getNextAvailableDate = useCallback(
-    (startDate) => {
-      let nextDate = new Date(startDate);
-      while (isPastDay(nextDate) || isDayUnavailable(nextDate)) {
-        nextDate.setDate(nextDate.getDate() + 1);
-      }
-      return nextDate;
-    },
-    [isDayUnavailable]
-  );
+      const dayName = daysMap[dayOfWeek]; // Obtenir le nom du jour
+      const isUnavailable = Days[dayName] === false;
 
-  useEffect(() => {
-    if (unavailableDays.length > 0) {
-      const initialDate = getNextAvailableDate(new Date(+1));
-      setDate(initialDate);
-    }
-  }, [unavailableDays, getNextAvailableDate]);
+      // Vérifier si le jour est marqué comme non disponible dans Days
+      return isUnavailable;
+    },
+    [Days]
+  );
 
   const isPastDay = (day) => {
     return day < new Date();
@@ -343,9 +351,11 @@ function App() {
                         mode="single"
                         selected={date}
                         onSelect={(selectedDate) => {
-                          setDate(selectedDate);
+                          if (!isDay(selectedDate)) {
+                            setDate(selectedDate);
+                          }
                         }}
-                        disabled={(day) => isPastDay(day)}
+                        disabled={(day) => isPastDay(day) || isDay(day)}
                         className="rounded-md border"
                       />
                     </div>

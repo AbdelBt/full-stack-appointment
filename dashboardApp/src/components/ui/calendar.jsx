@@ -38,8 +38,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         day_selected:
           "!bg-primary !hover:bg-primary !hover:text-primary-foreground !focus:bg-primary !focus:text-primary-foreground",
         day_today: "bg-accent text-accent-foreground",
-        day_outside:
-          "day-outside text-muted-foreground opacity-50  aria-selected:text-muted-foreground aria-selected:opacity-30 ",
+        day_outside: "text-slate-300",
         day_disabled: "text-red-600", // Changer la classe CSS pour les jours désactivés en rouge
         day_range_middle:
           "aria-selected:bg-accent  aria-selected:text-accent-foreground",

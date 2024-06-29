@@ -373,8 +373,8 @@ router.delete("/:id", async (req, res) => {
 cron.schedule("0 0 1 * *", async () => { // Exécuter à minuit le 1er de chaque mois
     try {
         // Calculer la date limite (2 mois avant la date actuelle)
-        const twoMonthsAgo = new Date();
-        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        const eighteenMonthsAgo = new Date();
+        eighteenMonthsAgo.setMonth(eighteenMonthsAgo.getMonth() - 18);
 
         // Convertir en format ISO pour la comparaison avec la base de données
         const formattedDate = twoMonthsAgo.toISOString();
@@ -387,9 +387,9 @@ cron.schedule("0 0 1 * *", async () => { // Exécuter à minuit le 1er de chaque
 
         if (error) throw error;
 
-        console.log("Réservations plus de 2 mois supprimées avec succès:", data);
+        console.log("Réservations plus de 18 mois supprimées avec succès:", data);
     } catch (error) {
-        console.error("Erreur lors de la suppression des réservations plus de 2 mois :", error.message);
+        console.error("Erreur lors de la suppression des réservations plus de 18 mois :", error.message);
     }
 });
 

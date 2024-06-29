@@ -10,6 +10,7 @@ import {
   Lock,
   LogOut,
   Plus,
+  Building2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
@@ -245,6 +246,11 @@ export default function Sidebar({ handleLogout }) {
           link: "/Calender",
           icon: <CalendarCheck />,
           text: "Calender",
+        },
+        {
+          link: "/Company",
+          icon: <Building2 />,
+          text: "Company",
         },
 
         {

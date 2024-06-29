@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 
@@ -51,5 +51,22 @@ router.post('/signup', async (req, res) => {
         res.status(500).json({ error: 'Failed to create user' });
     }
 });
+
+// Route GET pour récupérer tous les utilisateurs
+router.get('/users', async (req, res) => {
+    try {
+        const { data, error } = await supabase.auth.admin.listUsers();
+
+        if (error) {
+            throw error;
+        }
+
+        res.status(200).json({ users: data });
+    } catch (error) {
+        console.error('Error fetching users:', error.message);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
 
 module.exports = router;
