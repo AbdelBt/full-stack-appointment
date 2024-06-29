@@ -283,7 +283,7 @@ export default function Sidebar({ handleLogout }) {
             <p>{userInitials}</p>
           </div>
           <div className="text-white">
-            <p>{userEmail}</p>
+            <p className="text-md">{userEmail}</p>
           </div>
         </div>
         <Command>

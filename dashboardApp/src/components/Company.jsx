@@ -6,11 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+
+import { DatePickerWithRange } from "./dateDispo";
 
 export default function Company() {
   const [daysState, setDaysState] = useState([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
+  const [availableDates, setAvailableDates] = useState([]);
 
   useEffect(() => {
     const user = sessionStorage.getItem("user");
@@ -18,7 +23,20 @@ export default function Company() {
       navigate("/");
     }
     fetchDays();
+    fetchAvailableDates();
   }, [navigate]);
+
+  const fetchAvailableDates = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/available-dates"
+      );
+      setAvailableDates(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching available dates:", error);
+    }
+  };
 
   const fetchDays = async () => {
     try {
@@ -67,9 +85,54 @@ export default function Company() {
     }
   };
 
+  const handleChangeAvailableDates = async () => {
+    console.log("Selected date range:", dateRange);
+
+    const fromDateStr = `${dateRange.from.toLocaleDateString("en-EN", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    })}`;
+
+    const toDateStr = `${dateRange.to.toLocaleDateString("en-EN", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    })}`;
+
+    if (!dateRange.to) {
+      toast({
+        description: `Please select an end date`,
+        status: "warning",
+        className: "bg-red-500",
+      });
+      return;
+    }
+
+    try {
+      await axios.post("https://appointment-fr.onrender.com/available-dates", {
+        from_date: dateRange.from,
+        to_date: dateRange.to,
+      });
+      toast({
+        description: `Dates added successfully from ${fromDateStr} to ${toDateStr}`,
+        status: "success",
+        className: "bg-[#008000]",
+      });
+      fetchAvailableDates(); // Rafraîchir la liste des dates disponibles après l'ajout
+    } catch (error) {
+      console.error("Error adding available dates:", error);
+      toast({
+        description: `Failed to add dates`,
+        status: "error",
+        className: "bg-[#ff0000]",
+      });
+    }
+  };
+
   return (
-    <div className="w-full min-h-screen py-5">
-      <Card className="ml-2 max-w-sm">
+    <div className=" flex flex-col-reverse  w-full  h-full items-center px-10  gap-2 md:gap-60 md:mt-0 mt-36 text-white md:flex-row ">
+      <Card className=" h-fit shadow-xl bg-black">
         <CardHeader className="space-y-1">
           <CardTitle>Available Days</CardTitle>
         </CardHeader>
@@ -91,6 +154,23 @@ export default function Company() {
         </CardContent>
         <Toaster />
       </Card>
+      <div className="flex flex-col ">
+        <h1 className="text-4xl font-bold mb-5">Available Dates</h1>
+        <div className="flex flex-col">
+          <div className="flex justify-center">
+            <DatePickerWithRange
+              className="border border-indigo-500 p-2 rounded shadow-2xl bg-black w-full"
+              onSelect={setDateRange}
+            />
+          </div>
+
+          <div className="mt-5">
+            <Button type="submit" onClick={handleChangeAvailableDates}>
+              Submit
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

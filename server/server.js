@@ -5,6 +5,8 @@ const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 const reserveRouter = require('./routes/reserve');
 const indisponibilitiesRouter = require('./routes/indisponibilities');
+const availabledatesRouter = require('./routes/availabledates');
+
 const userRouter = require('./routes/user');
 const serverRouter = require('./routes/service');
 
@@ -23,6 +25,7 @@ app.use(cors());
 app.use('/reserve', reserveRouter);
 app.use('/user', userRouter);
 app.use('/services', serverRouter);
+app.use('/available-dates', availabledatesRouter);
 
 
 app.use('/indisponibilities', indisponibilitiesRouter);
