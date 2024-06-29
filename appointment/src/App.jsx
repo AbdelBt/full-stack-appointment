@@ -42,6 +42,10 @@ function App() {
   const [reservationCompleted, setReservationCompleted] = useState(true);
   const [employeeIds, setEmployeeIds] = useState([]);
   const [Days, setDays] = useState([]);
+  const [availableDateRange, setAvailableDateRange] = useState({
+    from: null,
+    to: null,
+  });
 
   useEffect(() => {
     fetchDays();
@@ -55,6 +59,16 @@ function App() {
         // eslint-disable-next-line no-unused-vars
         const { id, ...days } = response.data[0]; // Exclure l'ID
         setDays(days); // Mettre à jour l'état avec les jours non disponibles
+        const availableDatesResponse = await axios.get(
+          "https://appointment-fr.onrender.com/available-dates"
+        );
+        if (availableDatesResponse.data.length > 0) {
+          const { from_date, to_date } = availableDatesResponse.data[0];
+          setAvailableDateRange({
+            from: new Date(from_date),
+            to: new Date(to_date),
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching unavailable days:", error);
@@ -250,10 +264,16 @@ function App() {
       const dayName = daysMap[dayOfWeek]; // Obtenir le nom du jour
       const isUnavailable = Days[dayName] === false;
 
+      // Vérifiez si la date est dans la plage disponible
+      const isInAvailableRange =
+        availableDateRange.from && availableDateRange.to
+          ? day >= availableDateRange.from && day <= availableDateRange.to
+          : true;
+
       // Vérifier si le jour est marqué comme non disponible dans Days
-      return isUnavailable;
+      return isUnavailable || !isInAvailableRange || day < new Date();
     },
-    [Days]
+    [Days, availableDateRange]
   );
 
   const isPastDay = (day) => {
