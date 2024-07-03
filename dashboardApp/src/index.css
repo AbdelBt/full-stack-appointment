@@ -52,7 +52,7 @@
 }
 #root {
   background-color: hsl(224, 71.4%, 4.1%);
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
 

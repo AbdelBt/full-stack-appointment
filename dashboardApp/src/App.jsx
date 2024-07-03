@@ -7,7 +7,7 @@ import Dashboard from "./components/Dashboard";
 import Sidebar from "./components/Sidebar";
 import Calender from "./components/Calender";
 import Company from "./components/Company";
-import MyAvailabilities from "./assets/MyAvailabilities";
+import MyAvailabilities from "./components/MyAvailabilities";
 import Admin from "./components/Admin";
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
   return (
     <>
       <Router>
-        <div className="App flex items-center justify-center dark">
+        <div className="App flex justify-center dark">
           {isAuthenticated && <Sidebar handleLogout={handleLogout} />}
           <Routes>
             <Route

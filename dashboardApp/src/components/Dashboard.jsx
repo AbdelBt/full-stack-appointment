@@ -82,7 +82,6 @@ export default function DataTableDemo() {
         ); // Remplacez l'URL par celle de votre backend
 
         setData(response.data.reservations); // Met à jour l'état avec les données récupérées depuis axios
-        console.log(response.data.reservations);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
       }
@@ -291,7 +290,7 @@ export default function DataTableDemo() {
         const updateStatus = async (reservationId, newStatus) => {
           try {
             await axios.post(
-              `https://appointment-fr.onrender.com/reserve/${reservationId}/status`,
+              `http://localhost:3000/reserve/${reservationId}/status`,
               { status: newStatus }
             );
             // Update state or refresh data if needed

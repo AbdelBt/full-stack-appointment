@@ -44,9 +44,22 @@ const getAvailableEmployeForTimeSlot = async (date, timeSlot) => {
                 throw fetchError;
             }
 
+            // Vérifier si l'employé a un jour de congé à cette date
+            const { data: daysOff, error: fetchDaysOffError } = await supabase
+                .from("employee_days_off")
+                .select("*")
+                .eq("employee_email", user.email)
+                .eq("day_off_date", date);
+
+            if (fetchDaysOffError) {
+                throw fetchDaysOffError;
+            }
+
+
+
             // S'il n'y a pas d'indisponibilités, cet employé est disponible
-            if (existingIndisponibilities.length === 0) {
-                return user.email; // Retourner l'ID du premier employé disponible
+            if (existingIndisponibilities.length === 0 && daysOff.length === 0) {
+                return user.email; // Retourner l'email du premier employé disponible
             }
         }
 
@@ -209,7 +222,10 @@ router.post("/appointment", async (req, res) => {
         });
 
         const mailOptions = {
-            from: "abdella.boutaarourt@hotmail.com",
+            from: {
+                name: "House Of Beauty",
+                address: "abdella.boutaarourt@hotmail.com"
+            },
             to: clientEmail,
             subject: "Confirmation de réservation",
             html: `
@@ -305,6 +321,38 @@ router.post("/:id/status", async (req, res) => {
         if (status === "cancelled") {
             // Si le statut est "cancelled", libérer l'employé en mettant employe_id à null
             updateData.employe_email = null;
+
+            // Configurer l'e-mail d'annulation
+            const cancelMailOptions = {
+                from: {
+                    name: "House Of Beauty",
+                    address: "abdella.boutaarourt@hotmail.com"
+                },
+                to: currentReservation.client_email,
+                subject: "Annulation de votre réservation",
+                html: `
+                    <html>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                            <h1>Bonjour ${currentReservation.client_firstname} ${currentReservation.client_name}</h1>
+                            <p>Votre réservation pour ${currentReservation.service} le ${currentReservation.date} à ${currentReservation.time_slot} a été annulée.</p>
+                            <p>Merci de nous avoir prévenus.</p>
+                            <p>Cordialement,<br>L'équipe House Of Beauty</p>
+                            <div style="text-align: center;">
+                                <img src="https://i.goopics.net/lr3a9d.png" alt="Logo" style="max-width: 200px;">
+                            </div>
+                        </body>
+                    </html>
+                `,
+            };
+
+            // Envoyer l'e-mail d'annulation
+            transporter.sendMail(cancelMailOptions, (error, info) => {
+                if (error) {
+                    console.error("Erreur lors de l'envoi de l'e-mail d'annulation :", error);
+                } else {
+                    console.log("E-mail d'annulation envoyé :", info.response);
+                }
+            });
         } else if ((status === "pending" || status === "confirmed") && !currentReservation.employe_email) {
             // Si le statut est "pending" ou "confirm" et qu'aucun employé n'est assigné, trouver un employé disponible
             const email = await getAvailableEmployeForTimeSlot(currentReservation.date, currentReservation.time_slot);

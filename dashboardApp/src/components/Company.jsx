@@ -131,36 +131,37 @@ export default function Company() {
   };
 
   return (
-    <div className=" flex flex-col-reverse  w-full  h-full items-center px-10  gap-2 md:gap-60 md:mt-0 mt-36 text-white md:flex-row ">
-      <Card className=" h-fit shadow-xl bg-black">
-        <CardHeader className="space-y-1">
-          <CardTitle>Available Days</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols gap-4">
-            {Object.keys(daysState).map((day, index) => (
-              <div key={index} className="flex items-center">
-                <Checkbox
-                  id={day}
-                  checked={daysState[day]}
-                  onCheckedChange={() => handleDayChange(day)}
-                />
-                <Label htmlFor={day} className="ml-2 capitalize">
-                  {day}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-        <Toaster />
-      </Card>
+    <div className="flex flex-col w-full h-full justify-center items-center px-10 gap-2  xl:gap-20 text-white lg:flex-row">
       <div className="flex flex-col ">
         <h1 className="text-4xl font-bold mb-5">Available Dates</h1>
         <div className="flex flex-col">
-          <div className="flex justify-center">
+          <div className="flex justify-center border border-indigo-500 p-2 rounded shadow-2xl bg-black w-full items-center flex-col">
+            <div>
+              {" "}
+              <CardHeader className="space-y-1">
+                <CardTitle>Available Days</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className=" flex  gap-4">
+                  {Object.keys(daysState).map((day, index) => (
+                    <div key={index} className="flex items-center">
+                      <Checkbox
+                        id={day}
+                        checked={daysState[day]}
+                        onCheckedChange={() => handleDayChange(day)}
+                      />
+                      <Label htmlFor={day} className="ml-2 capitalize">
+                        {day}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <Toaster />
+            </div>
             <DatePickerWithRange
-              className="border border-indigo-500 p-2 rounded shadow-2xl bg-black w-full"
               onSelect={setDateRange}
+              className="w-full mt-8"
             />
           </div>
 

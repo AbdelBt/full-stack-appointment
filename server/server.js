@@ -6,6 +6,8 @@ const cors = require('cors');
 const reserveRouter = require('./routes/reserve');
 const indisponibilitiesRouter = require('./routes/indisponibilities');
 const availabledatesRouter = require('./routes/availabledates');
+const employeeRouter = require('./routes/employee');
+
 
 const userRouter = require('./routes/user');
 const serverRouter = require('./routes/service');
@@ -26,6 +28,8 @@ app.use('/reserve', reserveRouter);
 app.use('/user', userRouter);
 app.use('/services', serverRouter);
 app.use('/available-dates', availabledatesRouter);
+app.use('/employee', employeeRouter);
+
 
 
 app.use('/indisponibilities', indisponibilitiesRouter);
