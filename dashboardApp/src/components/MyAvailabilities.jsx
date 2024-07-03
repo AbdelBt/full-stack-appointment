@@ -294,7 +294,7 @@ export default function MyAvailabilities() {
                   <div className="text-sm flex flex-row-reverse justify-start">
                     <div className="flex justify-center w-full">
                       {new Date(dayOff.day_off_date).toLocaleDateString(
-                        "en-EN",
+                        "fr-FR",
                         {
                           weekday: "long",
                           day: "numeric",

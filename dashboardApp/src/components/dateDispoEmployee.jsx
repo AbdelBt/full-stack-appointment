@@ -107,25 +107,6 @@ export function DatePickerWithRange({
       onSelect({ from: null, to: null });
       setEyeIcon("eye-off");
 
-      const updatedDaysState = {
-        monday: false,
-        tuesday: false,
-        wednesday: false,
-        thursday: false,
-        friday: false,
-        saturday: false,
-        sunday: false,
-      };
-
-      const daysOfWeek = Object.keys(updatedDaysState);
-      for (let i = 0; i < daysOfWeek.length; i++) {
-        const day = daysOfWeek[i];
-        await axios.post("http://localhost:3000/employee/days", {
-          email: userId,
-          day_of_week: day,
-          available: updatedDaysState[day],
-        });
-      }
       toast({
         description: "you are now unavailable",
         status: "success",
@@ -169,7 +150,7 @@ export function DatePickerWithRange({
             format(date.from, "LLL dd, y")
           )
         ) : (
-          <span>Pick a date</span>
+          <span>No Available</span>
         )}
       </Button>
       <h1 className="font-black rounded bg-primary"> {userEmail}</h1>

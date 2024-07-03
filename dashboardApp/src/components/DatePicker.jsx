@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/popover";
 
 export function DatePickerDemo({ onSelect }) {
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(null); // Initialize date state to null
   useEffect(() => {
     onSelect(date);
   }, [date, onSelect]);
