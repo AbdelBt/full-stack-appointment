@@ -401,6 +401,50 @@ export default function Sidebar({ handleLogout }) {
     navigate("/");
   };
 
+  // Fonction pour récupérer les informations du client par email
+  const fetchClientDetails = async (identifier) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/reserve/appointment/${identifier}`
+      );
+      const clientData = response.data[0]; // Assurez-vous que la réponse est un tableau
+
+      if (clientData) {
+        console.log(clientData);
+
+        setName(clientData.client_name);
+        setFirstName(clientData.client_firstname);
+        setEmail(clientData.client_email);
+
+        setPhoneNumber(clientData.client_phone);
+        // Mettez à jour d'autres champs si nécessaire
+      }
+    } catch (error) {
+      console.error("Error fetching client details:", error);
+    }
+  };
+
+  // Fonction de gestion du changement de l'identifiant
+  const handleIdentifierChange = (event) => {
+    const newIdentifier = event.target.value;
+    setEmail(newIdentifier);
+
+    // Appeler la fonction fetchClientDetails dès que l'identifiant est saisi
+    if (newIdentifier) {
+      fetchClientDetails(newIdentifier);
+    }
+  };
+
+  // Fonction de gestion du changement de l'identifiant
+  const handleNameChange = (event) => {
+    const newIdentifier = event.target.value;
+    setName(newIdentifier);
+
+    // Appeler la fonction fetchClientDetails dès que l'identifiant est saisi
+    if (newIdentifier) {
+      fetchClientDetails(newIdentifier);
+    }
+  };
   const menuList = [
     {
       group: "General",
@@ -596,7 +640,17 @@ export default function Sidebar({ handleLogout }) {
                   id="email"
                   placeholder="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleIdentifierChange}
+                />
+              </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">Last name</Label>
+                <Input
+                  type="name"
+                  id="name"
+                  placeholder="name"
+                  value={name}
+                  onChange={handleNameChange}
                 />
               </div>
               <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
@@ -609,26 +663,19 @@ export default function Sidebar({ handleLogout }) {
                   onChange={(e) => setFirstName(e.target.value)}
                 />
               </div>
-              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                <Label htmlFor="name">Last name</Label>
-                <Input
-                  type="name"
-                  id="name"
-                  placeholder="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+
               <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
                 <Label htmlFor="name">Phone number</Label>
 
                 <PhoneInput
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
                   inputProps={{
-                    name: "phone",
+                    name: "phoneNumber",
                     required: true,
-                    autoFocus: true,
                   }}
-                  onChange={(value) => setPhoneNumber(value)}
+                  containerClass="col-span-3"
+                  inputClass="w-full"
                 />
               </div>
 

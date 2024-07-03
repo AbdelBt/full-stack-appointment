@@ -265,6 +265,32 @@ router.post("/appointment", async (req, res) => {
     }
 });
 
+router.get("/appointment/:identifier", async (req, res) => {
+    const { identifier } = req.params;
+
+    try {
+        // Utilisation de l'opérateur OR pour chercher soit par email soit par nom de famille
+        const { data: reservationsData, error } = await supabase
+            .from("reservations")
+            .select("*")
+            .or(`client_email.eq.${identifier},client_name.eq.${identifier}`);
+
+        if (error) {
+            return res.status(400).json({ error: `Erreur lors de la récupération des réservations : ${error.message}` });
+        }
+
+        if (reservationsData.length === 0) {
+            return res.status(404).json({ error: "Aucune réservation trouvée pour cet identifiant." });
+        }
+
+        res.status(200).json(reservationsData);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des réservations :', error.message);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+});
+
+
 // Route GET pour récupérer les réservations
 router.get("/", async (req, res) => {
     try {
