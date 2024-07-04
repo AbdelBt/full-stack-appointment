@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +68,39 @@ export default function Sidebar({ handleLogout }) {
   const [employeeDaysOff, setEmployeeDaysOff] = useState([]);
   const [employeeDaysOffWeek, setEmployeeDaysOffWeek] = useState([]);
   const [employeeAvailablePeriods, setEmployeeAvailablePeriods] = useState([]);
+  const [availableDateRange, setAvailableDateRange] = useState({
+    from: null,
+    to: null,
+  });
+  const [Days, setDays] = useState([]);
+
+  useEffect(() => {
+    fetchDays();
+  }, []);
+  const fetchDays = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/indisponibilities"
+      );
+      if (response.data.length > 0) {
+        // eslint-disable-next-line no-unused-vars
+        const { id, ...days } = response.data[0]; // Exclure l'ID
+        setDays(days); // Mettre à jour l'état avec les jours non disponibles
+        const availableDatesResponse = await axios.get(
+          "https://appointment-fr.onrender.com/available-dates"
+        );
+        if (availableDatesResponse.data.length > 0) {
+          const { from_date, to_date } = availableDatesResponse.data[0];
+          setAvailableDateRange({
+            from: new Date(from_date),
+            to: new Date(to_date),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching unavailable days:", error);
+    }
+  };
 
   const fetchUnavailableDays = async () => {
     try {
@@ -495,6 +528,34 @@ export default function Sidebar({ handleLogout }) {
     },
   ];
 
+  const isDay = useCallback(
+    (day) => {
+      const dayOfWeek = day.getDay(); // Obtenir le jour de la semaine (0: dimanche, 1: lundi, ..., 6: samedi)
+      const daysMap = {
+        0: "sunday",
+        1: "monday",
+        2: "tuesday",
+        3: "wednesday",
+        4: "thursday",
+        5: "friday",
+        6: "saturday",
+      };
+
+      const dayName = daysMap[dayOfWeek]; // Obtenir le nom du jour
+      const isUnavailable = Days[dayName] === false;
+
+      // Vérifiez si la date est dans la plage disponible
+      const isInAvailableRange =
+        availableDateRange.from && availableDateRange.to
+          ? day >= availableDateRange.from && day <= availableDateRange.to
+          : true;
+
+      // Vérifier si le jour est marqué comme non disponible dans Days
+      return isUnavailable || !isInAvailableRange || day < new Date();
+    },
+    [Days, availableDateRange]
+  );
+
   const isPastDay = (day) => {
     return day < new Date();
   };
@@ -553,6 +614,7 @@ export default function Sidebar({ handleLogout }) {
                 fetchEmployeeAvailablePeriods();
                 fetchEmployeeDaysOff();
                 setDate("");
+                fetchDays();
               }}
             >
               {" "}
@@ -590,7 +652,7 @@ export default function Sidebar({ handleLogout }) {
                       onSelect={(selectedDate) => {
                         setDate(selectedDate);
                       }}
-                      disabled={(day) => isPastDay(day)}
+                      disabled={(day) => isPastDay(day) || isDay(day)}
                       className="rounded-md border"
                     />
                   </div>
