@@ -764,7 +764,7 @@ export default function Sidebar({ handleLogout }) {
                   onValueChange={(value) => setService(value)}
                 >
                   <Label htmlFor="service">Service</Label>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Select a service" />
                   </SelectTrigger>
                   <SelectContent>
