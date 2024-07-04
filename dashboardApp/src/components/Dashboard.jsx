@@ -423,7 +423,7 @@ export default function DataTableDemo() {
     setExpandedRowId(rowId === expandedRowId ? null : rowId);
   };
   return (
-    <div className=" text-white mx-5 h-screen" style={{ width: "100%" }}>
+    <div className=" text-white mx-5" style={{ width: "100%" }}>
       <Toaster />
       <div className="flex items-center py-2">
         <DatePickerWithRange className="mr-5" onSelect={setDateRange} />

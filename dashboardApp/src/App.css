@@ -20,7 +20,6 @@
 .App{
   background-color: hsl(224, 71.4%, 4.1%);
   width: 100%;
-  margin: 1%;
   justify-content: space-between;
 }
 
@@ -32,6 +31,9 @@
   background-color: orange;
   font-weight: 600;
 
+}
+.fc .fc-toolbar-title {
+  font-size: 14px;
 }
 
 .status-cell.confirmed {

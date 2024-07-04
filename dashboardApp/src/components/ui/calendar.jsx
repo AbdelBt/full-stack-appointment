@@ -13,7 +13,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
       className={cn("p-3 w-full flex justify-center", className)}
       classNames={{
         months:
-          "flex flex-col w-full sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+          "flex flex-col sm:w-full sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4 w-full",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",

@@ -246,7 +246,7 @@ export default function MyAvailabilities() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full justify-center items-center px-10 gap-2  xl:gap-20 text-white lg:flex-row">
+    <div className="flex flex-col w-full min-h-min justify-center items-center px-10 gap-2  xl:gap-20 text-white lg:flex-row">
       <div className="flex flex-col">
         <h1 className="text-2xl font-bold mb-5"> My Available Dates</h1>
         <div className="flex flex-col border border-indigo-500 p-2 rounded bg-black">
@@ -257,7 +257,7 @@ export default function MyAvailabilities() {
                 <CardTitle className="text-md">Available Days:</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-4">
+                <div className="flex  sm:flex-row flex-col gap-4">
                   {daysOfWeek.map((day) => (
                     <div key={day} className="flex items-center">
                       <Checkbox
@@ -290,7 +290,7 @@ export default function MyAvailabilities() {
         </div>
       </div>
       <div>
-        <div className="flex flex-col">
+        <div className="flex flex-col mt-5">
           <h1 className="text-2xl font-bold mb-5">Employee Days OFF</h1>
           <ScrollArea className="h-72  rounded-md border bg-black">
             <div className="p-4">
@@ -323,7 +323,7 @@ export default function MyAvailabilities() {
           </ScrollArea>
           <DatePickerDemo onSelect={setDayOffDate} />
         </div>
-        <Button type="submit" className="mt-5" onClick={handleAddDayOff}>
+        <Button type="submit" className="my-5" onClick={handleAddDayOff}>
           Add Day Off
         </Button>
         <Toaster />

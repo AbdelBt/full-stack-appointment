@@ -131,7 +131,7 @@ export default function Company() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full justify-center items-center px-10 gap-2  xl:gap-20 text-white lg:flex-row">
+    <div className="flex flex-col w-full  justify-center items-center px-10 gap-2  xl:gap-20 text-white lg:flex-row">
       <div className="flex flex-col ">
         <h1 className="text-4xl font-bold mb-5">Available Dates</h1>
         <div className="flex flex-col">
