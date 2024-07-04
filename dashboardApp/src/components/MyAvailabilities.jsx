@@ -44,11 +44,14 @@ export default function MyAvailabilities() {
 
   const fetchDays = async (email) => {
     try {
-      const response = await axios.get(`http://localhost:3000/employee/days`, {
-        params: {
-          email: email,
-        },
-      });
+      const response = await axios.get(
+        `https://appointment-fr.onrender.com/employee/days`,
+        {
+          params: {
+            email: email,
+          },
+        }
+      );
       const daysData = response.data.reduce((acc, curr) => {
         acc[curr.day_of_week.toLowerCase()] = curr.available;
         return acc;
@@ -62,7 +65,7 @@ export default function MyAvailabilities() {
   const fetchDaysOff = async (email) => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/employee/days-off`,
+        `https://appointment-fr.onrender.com/employee/days-off`,
         {
           params: {
             email: email,
@@ -94,7 +97,7 @@ export default function MyAvailabilities() {
     const to_date_plus_one = addOneDay(dateRange.to);
 
     try {
-      await axios.post("http://localhost:3000/employee", {
+      await axios.post("https://appointment-fr.onrender.com/employee", {
         from_date: from_date_plus_one,
         to_date: to_date_plus_one,
         employee_email: JSON.parse(sessionStorage.getItem("user")).email,
@@ -136,7 +139,7 @@ export default function MyAvailabilities() {
     }));
 
     try {
-      await axios.post("http://localhost:3000/employee/days", {
+      await axios.post("https://appointment-fr.onrender.com/employee/days", {
         email: JSON.parse(sessionStorage.getItem("user")).email,
         day_of_week: day,
         available: updatedState,
@@ -194,10 +197,13 @@ export default function MyAvailabilities() {
 
     try {
       // Envoyer la date de congé au backend pour l'ajouter
-      await axios.post("http://localhost:3000/employee/days-off", {
-        email: JSON.parse(sessionStorage.getItem("user")).email,
-        day_off_date: adjustedDayOffDate, // Utilisation de la date sélectionnée
-      });
+      await axios.post(
+        "https://appointment-fr.onrender.com/employee/days-off",
+        {
+          email: JSON.parse(sessionStorage.getItem("user")).email,
+          day_off_date: adjustedDayOffDate, // Utilisation de la date sélectionnée
+        }
+      );
 
       toast({
         description: `Day off added successfully`,
@@ -219,7 +225,9 @@ export default function MyAvailabilities() {
 
   const handleDeleteDayOff = async (dayOffId) => {
     try {
-      await axios.delete(`http://localhost:3000/employee/days-off/${dayOffId}`);
+      await axios.delete(
+        `https://appointment-fr.onrender.com/employee/days-off/${dayOffId}`
+      );
       toast({
         description: `Day off deleted successfully`,
         status: "success",

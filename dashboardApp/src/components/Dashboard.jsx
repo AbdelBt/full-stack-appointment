@@ -290,7 +290,7 @@ export default function DataTableDemo() {
         const updateStatus = async (reservationId, newStatus) => {
           try {
             await axios.post(
-              `http://localhost:3000/reserve/${reservationId}/status`,
+              `https://appointment-fr.onrender.com/reserve/${reservationId}/status`,
               { status: newStatus }
             );
             // Update state or refresh data if needed

@@ -71,7 +71,9 @@ export default function Sidebar({ handleLogout }) {
 
   const fetchUnavailableDays = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/reserve");
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/reserve"
+      );
       const { reservations, employeeIds } = response.data;
       const filteredEmployeeIds = employeeIds.filter((id) => id); // Supprime les valeurs null, undefined et vides
 
@@ -85,7 +87,7 @@ export default function Sidebar({ handleLogout }) {
   const fetchEmployeeDaysoffWeek = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/employee/days/all"
+        "https://appointment-fr.onrender.com/employee/days/all"
       );
       const daysOffWeekData = response.data;
 
@@ -117,7 +119,9 @@ export default function Sidebar({ handleLogout }) {
 
   const fetchEmployeeAvailablePeriods = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/employee/all");
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/employee/all"
+      );
       const availablePeriodsData = response.data;
 
       // Mettre à jour l'état des périodes de disponibilité des employés
@@ -139,7 +143,7 @@ export default function Sidebar({ handleLogout }) {
   const fetchEmployeeDaysOff = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/employee/days-off/all"
+        "https://appointment-fr.onrender.com/employee/days-off/all"
       );
       const daysOffData = response.data.daysOff;
 
@@ -335,16 +339,19 @@ export default function Sidebar({ handleLogout }) {
       description
     );
     try {
-      await axios.post("http://localhost:3000/reserve/appointment", {
-        clientEmail: email,
-        service: service,
-        date: formattedDate,
-        timeSlot: selectedTimeSlot,
-        clientName: name,
-        clientFirstname: firstName,
-        phoneNumber: formattedPhoneNumber,
-        description: description,
-      });
+      await axios.post(
+        "https://appointment-fr.onrender.com/reserve/appointment",
+        {
+          clientEmail: email,
+          service: service,
+          date: formattedDate,
+          timeSlot: selectedTimeSlot,
+          clientName: name,
+          clientFirstname: firstName,
+          phoneNumber: formattedPhoneNumber,
+          description: description,
+        }
+      );
       const dateObject = new Date(formattedDate);
 
       // Vérifiez si dateObject est valide
@@ -405,7 +412,7 @@ export default function Sidebar({ handleLogout }) {
   const fetchClientDetails = async (identifier) => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/reserve/appointment/${identifier}`
+        `https://appointment-fr.onrender.com/reserve/appointment/${identifier}`
       );
       const clientData = response.data[0]; // Assurez-vous que la réponse est un tableau
 

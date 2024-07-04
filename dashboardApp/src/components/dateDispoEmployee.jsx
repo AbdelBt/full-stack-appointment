@@ -45,7 +45,7 @@ export function DatePickerWithRange({
   const fetchAvailableDates = async (email) => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/employee?employee_email=${email}`
+        `https://appointment-fr.onrender.com/employee?employee_email=${email}`
       );
       setAvailableDates(response.data);
       if (response.data.length > 0) {
@@ -71,7 +71,7 @@ export function DatePickerWithRange({
       [day]: updatedState,
     }));
     try {
-      await axios.post("http://localhost:3000/employee/days", {
+      await axios.post("https://appointment-fr.onrender.com/employee/days", {
         employee_email: JSON.parse(sessionStorage.getItem("user")).email,
         day_of_week: day,
         available: updatedState,
@@ -99,9 +99,12 @@ export function DatePickerWithRange({
         console.error("Error: userId is undefined or null.");
         return;
       }
-      await axios.post("http://localhost:3000/employee/delete-availability", {
-        email: userId, // Utilisation de l'ID de l'utilisateur pour la suppression
-      });
+      await axios.post(
+        "https://appointment-fr.onrender.com/employee/delete-availability",
+        {
+          email: userId, // Utilisation de l'ID de l'utilisateur pour la suppression
+        }
+      );
 
       setDate({ from: null, to: null });
       onSelect({ from: null, to: null });
