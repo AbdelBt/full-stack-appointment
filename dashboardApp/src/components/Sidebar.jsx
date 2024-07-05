@@ -129,17 +129,6 @@ export default function Sidebar({ handleLogout }) {
         (day) => !day.available
       );
 
-      // Obtenir la liste des employés qui ne sont pas en congé pour la date spécifiée
-      const unavailableEmployees = filteredDaysOffWeek.map(
-        (dayOffWeek) => dayOffWeek.employee_email
-      );
-
-      // Mettre à jour la liste des employés disponibles (employeeIds)
-      const availableEmployees = employeeIds.filter(
-        (employeeId) => !unavailableEmployees.includes(employeeId)
-      );
-      setEmployeeIds(availableEmployees);
-
       // Mettre à jour l'état des jours de congé des employés
       setEmployeeDaysOffWeek(filteredDaysOffWeek);
 
@@ -186,17 +175,6 @@ export default function Sidebar({ handleLogout }) {
         const dayOffDate = new Date(dayOff.day_off_date);
         return dayOffDate >= currentDate; // Filtrer pour les jours de congé à partir de la date actuelle
       });
-
-      // Obtenir la liste des employés qui ne sont pas en congé pour la date spécifiée
-      const unavailableEmployees = filteredDaysOff.map(
-        (dayOff) => dayOff.employee_id
-      );
-
-      // Mettre à jour la liste des employés disponibles (employeeIds)
-      const availableEmployees = employeeIds.filter(
-        (employeeId) => !unavailableEmployees.includes(employeeId)
-      );
-      setEmployeeIds(availableEmployees);
 
       setEmployeeDaysOff(filteredDaysOff); // Mettre à jour l'état des jours de congé des employés
 
@@ -270,9 +248,14 @@ export default function Sidebar({ handleLogout }) {
       !Array.isArray(employeeDaysOffWeek) ||
       !Array.isArray(employeeAvailablePeriods)
     ) {
-      console.error("Employee days off data is not an array");
+      console.error(
+        "Les données des jours de congé des employés ne sont pas un tableau"
+      );
       return false; // Gérer le cas où les jours de congé des employés ne sont pas disponibles
     }
+
+    // Tableau pour stocker les employés disponibles
+    const availableEmployees = []; // Ajouté
 
     // Vérifier si le créneau est indisponible pour chaque employé
     const isAnyEmployeeAvailable = employeeIds.some((employeeId) => {
@@ -302,12 +285,13 @@ export default function Sidebar({ handleLogout }) {
       // Vérifier si l'employé a un jour de congé à la date sélectionnée
       const isDayOff = employeeDaysOff.some((dayOff) => {
         const dayOffDate = new Date(dayOff.day_off_date);
-        return (
+        const isOff =
           dayOff.employee_email === employeeId &&
           dayOffDate.getFullYear() === date.getFullYear() &&
           dayOffDate.getMonth() === date.getMonth() &&
-          dayOffDate.getDate() === date.getDate()
-        );
+          dayOffDate.getDate() === date.getDate();
+
+        return isOff;
       });
 
       if (isDayOff) {
@@ -319,18 +303,16 @@ export default function Sidebar({ handleLogout }) {
         (period) => {
           const fromDate = new Date(period.from_date);
           const toDate = new Date(period.to_date);
-          return (
+          const isAvailable =
             period.employee_email === employeeId &&
             date >= fromDate &&
-            date <= toDate
-          );
+            date <= toDate;
+
+          return isAvailable;
         }
       );
 
       if (!isWithinAvailablePeriod) {
-        console.log(
-          `Employee ${employeeId} is not available during this period (${date})`
-        );
         return false; // L'employé n'est pas disponible pendant cette période, donc le créneau est indisponible
       }
 
@@ -343,13 +325,22 @@ export default function Sidebar({ handleLogout }) {
         const isSameTime = time === unavailable.time_slot.split(":")[0] + ":00";
         const isSameEmployee = unavailable.employe_email === employeeId;
 
-        return (
-          isSameYear && isSameMonth && isSameDay && isSameTime && isSameEmployee
-        );
+        const isBooked =
+          isSameYear &&
+          isSameMonth &&
+          isSameDay &&
+          isSameTime &&
+          isSameEmployee;
+
+        return isBooked;
       });
 
-      // Si l'employé est indisponible pour ce créneau horaire, retourner false
-      return !isUnavailable;
+      if (!isUnavailable) {
+        availableEmployees.push(employeeId); // Ajouter l'employé à la liste des disponibles s'il n'est pas indisponible
+        return true; // L'employé est disponible
+      }
+
+      return false; // L'employé est indisponible pour ce créneau horaire
     });
 
     return !isAnyEmployeeAvailable; // Si aucun employé n'est disponible pour ce créneau, retourner true
@@ -450,8 +441,6 @@ export default function Sidebar({ handleLogout }) {
       const clientData = response.data[0]; // Assurez-vous que la réponse est un tableau
 
       if (clientData) {
-        console.log(clientData);
-
         setName(clientData.client_name);
         setFirstName(clientData.client_firstname);
         setEmail(clientData.client_email);

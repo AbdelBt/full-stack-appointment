@@ -46,10 +46,14 @@ function App() {
     from: null,
     to: null,
   });
+  const [employeeDaysOff, setEmployeeDaysOff] = useState([]);
+  const [employeeDaysOffWeek, setEmployeeDaysOffWeek] = useState([]);
+  const [employeeAvailablePeriods, setEmployeeAvailablePeriods] = useState([]);
 
   useEffect(() => {
     fetchDays();
   }, []);
+
   const fetchDays = async () => {
     try {
       const response = await axios.get(
@@ -72,6 +76,94 @@ function App() {
       }
     } catch (error) {
       console.error("Error fetching unavailable days:", error);
+    }
+  };
+
+  const fetchUnavailableDays = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/reserve"
+      );
+      const { reservations, employeeIds } = response.data;
+      const filteredEmployeeIds = employeeIds.filter((id) => id); // Supprime les valeurs null, undefined et vides
+
+      setUnavailableDays(reservations);
+      setEmployeeIds(filteredEmployeeIds);
+    } catch (error) {
+      console.error("Error fetching unavailable days:", error);
+    }
+  };
+
+  const fetchEmployeeDaysoffWeek = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/employee/days/all"
+      );
+      const daysOffWeekData = response.data;
+
+      // Filtrer les jours où available est false
+      const filteredDaysOffWeek = daysOffWeekData.filter(
+        (day) => !day.available
+      );
+
+      // Mettre à jour l'état des jours de congé des employés
+      setEmployeeDaysOffWeek(filteredDaysOffWeek);
+
+      return filteredDaysOffWeek;
+    } catch (error) {
+      console.error("Error fetching employee days off week:", error);
+      return [];
+    }
+  };
+
+  const fetchEmployeeAvailablePeriods = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/employee/all"
+      );
+      const availablePeriodsData = response.data;
+
+      // Mettre à jour l'état des périodes de disponibilité des employés
+      setEmployeeAvailablePeriods(availablePeriodsData);
+      console.log(availablePeriodsData);
+
+      return availablePeriodsData;
+    } catch (error) {
+      console.error("Error fetching employee available periods:", error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployeeDaysoffWeek();
+    fetchEmployeeAvailablePeriods();
+    fetchEmployeeDaysOff();
+  }, []);
+
+  useEffect(() => {
+    fetchUnavailableDays();
+  }, []);
+
+  const fetchEmployeeDaysOff = async () => {
+    try {
+      const response = await axios.get(
+        "https://appointment-fr.onrender.com/employee/days-off/all"
+      );
+      const daysOffData = response.data.daysOff;
+
+      // Filtrer les jours de congé pour une date spécifique
+      const currentDate = new Date(); // Date actuelle
+      const filteredDaysOff = daysOffData.filter((dayOff) => {
+        const dayOffDate = new Date(dayOff.day_off_date);
+        return dayOffDate >= currentDate; // Filtrer pour les jours de congé à partir de la date actuelle
+      });
+
+      setEmployeeDaysOff(filteredDaysOff); // Mettre à jour l'état des jours de congé des employés
+
+      return filteredDaysOff;
+    } catch (error) {
+      console.error("Error fetching employee days off:", error);
+      return [];
     }
   };
 
@@ -186,9 +278,25 @@ function App() {
     fetchServices();
   }, []);
 
-  useEffect(() => {
-    fetchUnavailableDays();
-  }, []);
+  const getTime = () => {
+    const timeList = [];
+    for (let i = 9; i <= 21; i++) {
+      const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
+      const time = hour + ":00";
+      const isUnavailable = isTimeUnavailableForDate(
+        time,
+        date,
+        employeeIds,
+        employeeDaysOff,
+        unavailableDays,
+        employeeDaysOffWeek,
+        employeeAvailablePeriods
+      );
+      timeList.push({ time, isUnavailable });
+    }
+
+    setTimeSlot(timeList);
+  };
 
   useEffect(() => {
     if (date) {
@@ -199,53 +307,110 @@ function App() {
     }
   }, [date, unavailableDays]);
 
-  const getTime = () => {
-    const timeList = [];
-    for (let i = 9; i <= 21; i++) {
-      const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
-      const time = hour + ":00";
-      const isUnavailable = isTimeUnavailableForDate(time, date, employeeIds);
-      timeList.push({ time, isUnavailable });
-    }
-    setTimeSlot(timeList);
-  };
-
   const isTimeUnavailableForDate = (time, date, employeeIds) => {
-    if (!date) return false;
+    if (!date) return false; // Si la date n'est pas définie, le créneau est disponible
 
-    // Vérifier si tous les employés sont occupés à la date et heure données
-    const allEmployeesUnavailable = employeeIds.every((employe_email) => {
+    if (
+      !Array.isArray(employeeDaysOff) ||
+      !Array.isArray(employeeDaysOffWeek) ||
+      !Array.isArray(employeeAvailablePeriods)
+    ) {
+      console.error(
+        "Les données des jours de congé des employés ne sont pas un tableau"
+      );
+      return false; // Gérer le cas où les jours de congé des employés ne sont pas disponibles
+    }
+
+    // Tableau pour stocker les employés disponibles
+    const availableEmployees = []; // Ajouté
+
+    // Vérifier si le créneau est indisponible pour chaque employé
+    const isAnyEmployeeAvailable = employeeIds.some((employeeId) => {
+      // Vérifier si l'employé a un jour de congé hebdomadaire à la date sélectionnée
+      const hasWeeklyDayOff = employeeDaysOffWeek.some((dayOffWeek) => {
+        const dayOfWeekMapping = {
+          sunday: 0,
+          monday: 1,
+          tuesday: 2,
+          wednesday: 3,
+          thursday: 4,
+          friday: 5,
+          saturday: 6,
+        };
+        const isOff =
+          dayOffWeek.employee_email === employeeId &&
+          dayOfWeekMapping[dayOffWeek.day_of_week.toLowerCase()] ===
+            date.getDay();
+
+        return isOff;
+      });
+
+      if (hasWeeklyDayOff) {
+        return false; // L'employé a un jour de congé hebdomadaire, donc le créneau est indisponible
+      }
+
+      // Vérifier si l'employé a un jour de congé à la date sélectionnée
+      const isDayOff = employeeDaysOff.some((dayOff) => {
+        const dayOffDate = new Date(dayOff.day_off_date);
+        const isOff =
+          dayOff.employee_email === employeeId &&
+          dayOffDate.getFullYear() === date.getFullYear() &&
+          dayOffDate.getMonth() === date.getMonth() &&
+          dayOffDate.getDate() === date.getDate();
+
+        return isOff;
+      });
+
+      if (isDayOff) {
+        return false; // L'employé a un jour de congé, donc le créneau est indisponible
+      }
+
+      // Vérifier si l'employé est disponible pendant la période spécifiée
+      const isWithinAvailablePeriod = employeeAvailablePeriods.some(
+        (period) => {
+          const fromDate = new Date(period.from_date);
+          const toDate = new Date(period.to_date);
+          const isAvailable =
+            period.employee_email === employeeId &&
+            date >= fromDate &&
+            date <= toDate;
+
+          return isAvailable;
+        }
+      );
+
+      if (!isWithinAvailablePeriod) {
+        return false; // L'employé n'est pas disponible pendant cette période, donc le créneau est indisponible
+      }
+
+      // Vérifier si le créneau est déjà réservé à la date et à l'heure spécifiées
       const isUnavailable = unavailableDays.some((unavailable) => {
         const unavailableDate = new Date(unavailable.date);
         const isSameYear = date.getFullYear() === unavailableDate.getFullYear();
         const isSameMonth = date.getMonth() === unavailableDate.getMonth();
         const isSameDay = date.getDate() === unavailableDate.getDate();
         const isSameTime = time === unavailable.time_slot.split(":")[0] + ":00";
-        const isSameEmployee = employe_email === unavailable.employe_email;
+        const isSameEmployee = unavailable.employe_email === employeeId;
 
-        return (
-          isSameYear && isSameMonth && isSameDay && isSameTime && isSameEmployee
-        );
+        const isBooked =
+          isSameYear &&
+          isSameMonth &&
+          isSameDay &&
+          isSameTime &&
+          isSameEmployee;
+
+        return isBooked;
       });
 
-      return isUnavailable;
+      if (!isUnavailable) {
+        availableEmployees.push(employeeId); // Ajouter l'employé à la liste des disponibles s'il n'est pas indisponible
+        return true; // L'employé est disponible
+      }
+
+      return false; // L'employé est indisponible pour ce créneau horaire
     });
 
-    return allEmployeesUnavailable;
-  };
-
-  const fetchUnavailableDays = async () => {
-    try {
-      const response = await axios.get(
-        "https://appointment-fr.onrender.com/reserve"
-      );
-      const { reservations, employeeIds } = response.data;
-
-      setUnavailableDays(reservations);
-      setEmployeeIds(employeeIds);
-    } catch (error) {
-      console.error("Error fetching unavailable days:", error);
-    }
+    return !isAnyEmployeeAvailable; // Si aucun employé n'est disponible pour ce créneau, retourner true
   };
 
   const isDay = useCallback(
@@ -324,7 +489,6 @@ function App() {
 
       if (result.error) {
         console.error("Erreur de redirection vers Checkout:", result.error);
-        console.log("testtest");
 
         // Gérer l'erreur de redirection
       }
@@ -337,7 +501,6 @@ function App() {
   return (
     <div className="App">
       <Toaster />
-
       <AlertDialog className="z-100">
         <AlertDialogTrigger id="myAlertDialogTrigger" />
         <AlertDialogContent>
@@ -371,9 +534,7 @@ function App() {
                         mode="single"
                         selected={date}
                         onSelect={(selectedDate) => {
-                          if (!isDay(selectedDate)) {
-                            setDate(selectedDate);
-                          }
+                          setDate(selectedDate);
                         }}
                         disabled={(day) => isPastDay(day) || isDay(day)}
                         className="rounded-md border"

@@ -59,18 +59,19 @@ function Login({ setIsAuthenticated }) {
 
         // Redirection vers le dashboard après connexion réussie
         navigate("/Dashboard");
+      } else {
+        toast({
+          variant: "destructive",
+          description: "Login failed. Please try again.",
+        });
       }
     } catch (err) {
       console.error("Error during login:", err);
-      toast({
-        variant: "destructive",
-        description: "Login failed. Please try again.",
-      });
     }
   };
 
   return (
-    <div className="">
+    <div className="flex w-full justify-center">
       <Card className="mx-auto max-w-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Login</CardTitle>
