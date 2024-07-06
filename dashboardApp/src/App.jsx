@@ -26,7 +26,7 @@ function App() {
   return (
     <>
       <Router>
-        <div className="App flex  dark">
+        <div className="App flex dark gap-0">
           {isAuthenticated && <Sidebar handleLogout={handleLogout} />}
           <Routes>
             <Route

@@ -99,7 +99,7 @@ export default function Calendar() {
       }
     : null;
   return (
-    <div style={{ width: "100%" }} className="text-white m-5">
+    <div style={{ width: "100%", height: "98vh" }} className="text-white m-5">
       {/* AlertDialog personnalisé */}
       <AlertDialog>
         <AlertDialogTrigger

@@ -255,7 +255,11 @@ export default function DataTableDemo() {
 
         return (
           <Select
-            value={service}
+            value={
+              services.find((serviceItem) => serviceItem.name === service)
+                ? service
+                : service || ""
+            }
             onValueChange={(value) => updateService(payment.id, value)}
           >
             <SelectTrigger>
@@ -270,6 +274,12 @@ export default function DataTableDemo() {
                   </SelectItem>
                 ))}
               </SelectGroup>
+              {!services.find((serviceItem) => serviceItem.name === service) &&
+                service && (
+                  <SelectItem key="unknown" value={service} disabled>
+                    {service}
+                  </SelectItem>
+                )}
             </SelectContent>
           </Select>
         );
@@ -423,7 +433,7 @@ export default function DataTableDemo() {
     setExpandedRowId(rowId === expandedRowId ? null : rowId);
   };
   return (
-    <div className=" text-white mx-5" style={{ width: "100%" }}>
+    <div className=" text-white mx-5 w-full">
       <Toaster />
       <div className="flex items-center py-2">
         <DatePickerWithRange className="mr-5" onSelect={setDateRange} />
@@ -448,11 +458,11 @@ export default function DataTableDemo() {
               }
             });
           }}
-          className="max-w-sm"
+          className="max-w-sm sm:block hidden"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto sm:flex hidden">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
