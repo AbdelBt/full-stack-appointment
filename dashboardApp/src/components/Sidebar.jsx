@@ -12,7 +12,6 @@ import {
   Plus,
   Building2,
   CalendarCog,
-  Menu,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
@@ -551,383 +550,129 @@ export default function Sidebar({ handleLogout }) {
   };
 
   return (
-    <div>
-      <div className="w-[300px] border-r min-h-screen pt-10 sideb hidden sm:block">
-        <div>
-          <div className="flex items-center justify-center gap-2">
-            <div className="avatar rounded-full min-h-12 min-w-12 bg-emerald-500 font-[700] flex items-center justify-center text-white">
-              <p>{userInitials}</p>
-            </div>
-            <div className="text-white">
-              <p className="text-md">{userEmail}</p>
-            </div>
+    <div className="w-[300px] border-r min-h-screen pt-10 sideb">
+      <div>
+        <div className="flex items-center justify-center gap-2">
+          <div className="avatar rounded-full min-h-12 min-w-12 bg-emerald-500 font-[700] flex items-center justify-center text-white">
+            <p>{userInitials}</p>
           </div>
-          <Command>
-            <CommandList>
-              {menuList.map((menu, index) => (
-                <CommandGroup key={index} heading={menu.group}>
-                  {menu.items.map((option, optionsKey) =>
-                    option.text ? (
-                      <Link to={option.link} key={optionsKey}>
-                        <CommandItem
-                          key={optionsKey}
-                          className="flex gap-2 cursor-pointer"
-                        >
-                          {option.icon}
-                          {option.text}
-                        </CommandItem>
-                      </Link>
-                    ) : (
-                      <div onClick={handleLogoutClick} key={index}>
-                        <CommandItem
-                          key={index}
-                          className="flex gap-2 cursor-pointer"
-                        >
-                          {option.icon}
-                          <p>Logout</p>
-                        </CommandItem>
-                      </div>
-                    )
-                  )}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </Command>
-          <Sheet className="mt-10">
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                className="text-white mt-5"
-                onClick={() => {
-                  fetchUnavailableDays();
-                  fetchServices();
-                  fetchEmployeeDaysoffWeek();
-                  fetchEmployeeAvailablePeriods();
-                  fetchEmployeeDaysOff();
-                  setDate("");
-                  fetchDays();
-                }}
-              >
-                {" "}
-                <Plus /> New Appointment
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>New Appointment</SheetTitle>
-              </SheetHeader>
-              <div>
-                <div className=" grid grid-cols-1 md:grid-cols-2 mt-5 gap-6">
-                  <div className="flex flex-col gap-3 items-baseline">
-                    <div className="flex gap-2 items-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="size-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
-                        />
-                      </svg>
-                      Select Date
-                    </div>
-                    <div className="md:block md:w-auto flex w-full justify-center">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(selectedDate) => {
-                          setDate(selectedDate);
-                        }}
-                        disabled={(day) => isPastDay(day) || isDay(day)}
-                        className="rounded-md border"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-3 items-baseline">
-                    <div className="flex gap-2 items-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="size-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                      </svg>
-                      Select Time Slot
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
-                      {timeSlot?.map((item, index) => (
-                        <div
-                          onClick={() => {
-                            if (!item.isUnavailable)
-                              setSelectedTimeSlot(item.time);
-                          }}
-                          key={index}
-                          className={`
-
-                          p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center
-
-                          ${
-                            item.isUnavailable
-                              ? "bg-red-300 text-gray-600 cursor-not-allowed hover:"
-                              : item.time === selectedTimeSlot
-                              ? "bg-primary text-white"
-                              : ""
-                          }
-  `}
-                        >
-                          {item.time}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                  <Label htmlFor="name">Email</Label>
-                  <Input
-                    type="email"
-                    id="email"
-                    placeholder="email"
-                    value={email}
-                    onChange={handleIdentifierChange}
-                  />
-                </div>
-                <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                  <Label htmlFor="name">Last name</Label>
-                  <Input
-                    type="name"
-                    id="name"
-                    placeholder="name"
-                    value={name}
-                    onChange={handleNameChange}
-                  />
-                </div>
-                <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                  <Label htmlFor="name">First name</Label>
-                  <Input
-                    type="firstName"
-                    id="firstName"
-                    placeholder="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                  <Label htmlFor="name">Phone number</Label>
-
-                  <PhoneInput
-                    value={phoneNumber}
-                    onChange={setPhoneNumber}
-                    inputProps={{
-                      name: "phoneNumber",
-                      required: true,
-                    }}
-                    containerClass="col-span-3"
-                    inputClass="w-full"
-                  />
-                </div>
-
-                <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                  <Label htmlFor="name">Description</Label>
-                  <Textarea
-                    type="description"
-                    placeholder="description"
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-                <div className="mt-5 text-left">
-                  <Select
-                    value={service}
-                    onValueChange={(value) => setService(value)}
-                  >
-                    <Label htmlFor="service">Service</Label>
-                    <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Select a service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Services</SelectLabel>
-                        {services.map((serviceItem) => (
-                          <SelectItem
-                            key={serviceItem.id}
-                            value={serviceItem.name}
-                          >
-                            {serviceItem.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <SheetFooter>
-                <SheetClose asChild>
-                  <Button
-                    disabled={
-                      !(
-                        date &&
-                        description &&
-                        selectedTimeSlot &&
-                        name &&
-                        firstName &&
-                        phoneNumber &&
-                        service
-                      )
-                    }
-                    onClick={handleSubmit}
-                  >
-                    ADD
-                  </Button>
-                </SheetClose>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-          <Toaster />
+          <div className="text-white">
+            <p className="text-md">{userEmail}</p>
+          </div>
         </div>
-      </div>
-      <Sheet>
-        <SheetTrigger asChild className="block sm:hidden">
-          <Button variant="outline">
-            <Menu />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="avatar rounded-full min-h-12 min-w-12 bg-emerald-500 font-[700] flex items-center justify-center">
-                <p>{userInitials}</p>
-              </div>
-              <div>
-                <p className="text-sm">{userEmail}</p>
-              </div>
-            </div>
-            <Command>
-              <CommandList>
-                {menuList.map((menu, index) => (
-                  <CommandGroup key={index} heading={menu.group}>
-                    {menu.items.map((option, optionsKey) =>
-                      option.text ? (
-                        <Link to={option.link} key={optionsKey}>
-                          <CommandItem
-                            key={optionsKey}
-                            className="flex gap-2 cursor-pointer"
-                          >
-                            {option.icon}
-                            {option.text}
-                          </CommandItem>
-                        </Link>
-                      ) : (
-                        <div onClick={handleLogoutClick} key={index}>
-                          <CommandItem
-                            key={index}
-                            className="flex gap-2 cursor-pointer"
-                          >
-                            {option.icon}
-                            <p>Logout</p>
-                          </CommandItem>
-                        </div>
-                      )
-                    )}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-            </Command>
-            <Sheet className="mt-10">
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="text-white mt-5"
-                  onClick={() => {
-                    fetchUnavailableDays();
-                    fetchServices();
-                    fetchEmployeeDaysoffWeek();
-                    fetchEmployeeAvailablePeriods();
-                    fetchEmployeeDaysOff();
-                    setDate("");
-                    fetchDays();
-                  }}
-                >
-                  {" "}
-                  <Plus /> New Appointment
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>New Appointment</SheetTitle>
-                </SheetHeader>
-                <div>
-                  <div className=" grid grid-cols-1 md:grid-cols-2 mt-5 gap-6">
-                    <div className="flex flex-col gap-3 items-baseline">
-                      <div className="flex gap-2 items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
-                          />
-                        </svg>
-                        Select Date
-                      </div>
-                      <div className="md:block md:w-auto flex w-full justify-center">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={(selectedDate) => {
-                            setDate(selectedDate);
-                          }}
-                          disabled={(day) => isPastDay(day) || isDay(day)}
-                          className="rounded-md border"
-                        />
-                      </div>
+        <Command>
+          <CommandList>
+            {menuList.map((menu, index) => (
+              <CommandGroup key={index} heading={menu.group}>
+                {menu.items.map((option, optionsKey) =>
+                  option.text ? (
+                    <Link to={option.link} key={optionsKey}>
+                      <CommandItem
+                        key={optionsKey}
+                        className="flex gap-2 cursor-pointer"
+                      >
+                        {option.icon}
+                        {option.text}
+                      </CommandItem>
+                    </Link>
+                  ) : (
+                    <div onClick={handleLogoutClick} key={index}>
+                      <CommandItem
+                        key={index}
+                        className="flex gap-2 cursor-pointer"
+                      >
+                        {option.icon}
+                        <p>Logout</p>
+                      </CommandItem>
                     </div>
-                    <div className="flex flex-col gap-3 items-baseline">
-                      <div className="flex gap-2 items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                          />
-                        </svg>
-                        Select Time Slot
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
-                        {timeSlot?.map((item, index) => (
-                          <div
-                            onClick={() => {
-                              if (!item.isUnavailable)
-                                setSelectedTimeSlot(item.time);
-                            }}
-                            key={index}
-                            className={`
+                  )
+                )}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+        <Sheet className="mt-10">
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              className="text-white mt-5"
+              onClick={() => {
+                fetchUnavailableDays();
+                fetchServices();
+                fetchEmployeeDaysoffWeek();
+                fetchEmployeeAvailablePeriods();
+                fetchEmployeeDaysOff();
+                setDate("");
+                fetchDays();
+              }}
+            >
+              {" "}
+              <Plus /> New Appointment
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>New Appointment</SheetTitle>
+            </SheetHeader>
+            <div>
+              <div className=" grid grid-cols-1 md:grid-cols-2 mt-5 gap-6">
+                <div className="flex flex-col gap-3 items-baseline">
+                  <div className="flex gap-2 items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
+                      />
+                    </svg>
+                    Select Date
+                  </div>
+                  <div className="md:block md:w-auto flex w-full justify-center">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(selectedDate) => {
+                        setDate(selectedDate);
+                      }}
+                      disabled={(day) => isPastDay(day) || isDay(day)}
+                      className="rounded-md border"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 items-baseline">
+                  <div className="flex gap-2 items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                      />
+                    </svg>
+                    Select Time Slot
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
+                    {timeSlot?.map((item, index) => (
+                      <div
+                        onClick={() => {
+                          if (!item.isUnavailable)
+                            setSelectedTimeSlot(item.time);
+                        }}
+                        key={index}
+                        className={`
 
                           p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center
 
@@ -939,120 +684,118 @@ export default function Sidebar({ handleLogout }) {
                               : ""
                           }
   `}
-                          >
-                            {item.time}
-                          </div>
-                        ))}
+                      >
+                        {item.time}
                       </div>
-                    </div>
-                  </div>
-                  <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                    <Label htmlFor="name">Email</Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      placeholder="email"
-                      value={email}
-                      onChange={handleIdentifierChange}
-                    />
-                  </div>
-                  <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                    <Label htmlFor="name">Last name</Label>
-                    <Input
-                      type="name"
-                      id="name"
-                      placeholder="name"
-                      value={name}
-                      onChange={handleNameChange}
-                    />
-                  </div>
-                  <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                    <Label htmlFor="name">First name</Label>
-                    <Input
-                      type="firstName"
-                      id="firstName"
-                      placeholder="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                    <Label htmlFor="name">Phone number</Label>
-
-                    <PhoneInput
-                      value={phoneNumber}
-                      onChange={setPhoneNumber}
-                      inputProps={{
-                        name: "phoneNumber",
-                        required: true,
-                      }}
-                      containerClass="col-span-3"
-                      inputClass="w-full"
-                    />
-                  </div>
-
-                  <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
-                    <Label htmlFor="name">Description</Label>
-                    <Textarea
-                      type="description"
-                      placeholder="description"
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="mt-5 text-left">
-                    <Select
-                      value={service}
-                      onValueChange={(value) => setService(value)}
-                    >
-                      <Label htmlFor="service">Service</Label>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Select a service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Services</SelectLabel>
-                          {services.map((serviceItem) => (
-                            <SelectItem
-                              key={serviceItem.id}
-                              value={serviceItem.name}
-                            >
-                              {serviceItem.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                    ))}
                   </div>
                 </div>
-                <SheetFooter>
-                  <SheetClose asChild>
-                    <Button
-                      disabled={
-                        !(
-                          date &&
-                          description &&
-                          selectedTimeSlot &&
-                          name &&
-                          firstName &&
-                          phoneNumber &&
-                          service
-                        )
-                      }
-                      onClick={handleSubmit}
-                    >
-                      ADD
-                    </Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-            <Toaster />
-          </div>
-        </SheetContent>
-      </Sheet>
+              </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">Email</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  placeholder="email"
+                  value={email}
+                  onChange={handleIdentifierChange}
+                />
+              </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">Last name</Label>
+                <Input
+                  type="name"
+                  id="name"
+                  placeholder="name"
+                  value={name}
+                  onChange={handleNameChange}
+                />
+              </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">First name</Label>
+                <Input
+                  type="firstName"
+                  id="firstName"
+                  placeholder="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">Phone number</Label>
+
+                <PhoneInput
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
+                  inputProps={{
+                    name: "phoneNumber",
+                    required: true,
+                  }}
+                  containerClass="col-span-3"
+                  inputClass="w-full"
+                />
+              </div>
+
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-5 text-left">
+                <Label htmlFor="name">Description</Label>
+                <Textarea
+                  type="description"
+                  placeholder="description"
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+              <div className="mt-5 text-left">
+                <Select
+                  value={service}
+                  onValueChange={(value) => setService(value)}
+                >
+                  <Label htmlFor="service">Service</Label>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="Select a service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Services</SelectLabel>
+                      {services.map((serviceItem) => (
+                        <SelectItem
+                          key={serviceItem.id}
+                          value={serviceItem.name}
+                        >
+                          {serviceItem.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <SheetFooter>
+              <SheetClose asChild>
+                <Button
+                  disabled={
+                    !(
+                      date &&
+                      description &&
+                      selectedTimeSlot &&
+                      name &&
+                      firstName &&
+                      phoneNumber &&
+                      service
+                    )
+                  }
+                  onClick={handleSubmit}
+                >
+                  ADD
+                </Button>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+        <Toaster />
+      </div>
     </div>
   );
 }
