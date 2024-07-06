@@ -458,11 +458,11 @@ export default function DataTableDemo() {
               }
             });
           }}
-          className="max-w-sm sm:block hidden"
+          className="max-w-sm"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto sm:flex hidden">
+            <Button variant="outline" className="ml-auto">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
