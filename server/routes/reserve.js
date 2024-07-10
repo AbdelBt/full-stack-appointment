@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
     port: 587,
     secure: false,
     auth: {
-        user: "deevwebhb@gmail.com",
+        user: "houseofbeautybm@gmail.com",
         pass: process.env.APP_PASSWORD,
     },
 });
@@ -264,7 +264,36 @@ router.post("/appointment", async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 });
+const cancelMailOptions = {
+    from: {
+        name: "House Of Beauty",
+        address: "houseofbeautybm@outlook.com"
+    },
+    to: "houseofbeautybm@outlook.com",
+    subject: "Annulation de votre réservation",
+    html: `
+        <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                <h1>Bonjour </h1>
+                <p>Votre réservation pour  a été annulée.</p>
+                <p>Merci de nous avoir prévenus.</p>
+                <p>Cordialement,<br>L'équipe House Of Beauty</p>
+                <div style="text-align: center;">
+                    <img src="https://i.goopics.net/lr3a9d.png" alt="Logo" style="max-width: 200px;">
+                </div>
+            </body>
+        </html>
+    `,
+};
 
+// Envoyer l'e-mail d'annulation
+transporter.sendMail(cancelMailOptions, (error, info) => {
+    if (error) {
+        console.error("Erreur lors de l'envoi de l'e-mail d'annulation :", error);
+    } else {
+        console.log("E-mail d'annulation envoyé :", info.response);
+    }
+});
 router.get("/appointment/:identifier", async (req, res) => {
     const { identifier } = req.params;
 
