@@ -212,25 +212,55 @@ export default function Sidebar({ handleLogout }) {
     fetchServices();
   }, []);
 
-  const getTime = () => {
-    const timeList = [];
-    for (let i = 9; i <= 21; i++) {
-      const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
-      const time = hour + ":00";
-      const isUnavailable = isTimeUnavailableForDate(
-        time,
-        date,
-        employeeIds,
-        employeeDaysOff,
-        unavailableDays,
-        employeeDaysOffWeek,
-        employeeAvailablePeriods
+  const getTime = async () => {
+    try {
+      // Récupérer les horaires de travail depuis le backend
+      const response = await axios.get(
+        "http://localhost:3000/available-dates/working-hours"
       );
-      timeList.push({ time, isUnavailable });
-    }
+      const workingHours = response.data;
 
-    setTimeSlot(timeList);
+      // Création d'un tableau pour les créneaux horaires disponibles
+      const timeList = [];
+
+      // Définir des heures globales par défaut si aucune information n'est trouvée
+      const defaultStartHour = 10;
+      const defaultEndHour = 18;
+
+      // Utiliser les horaires récupérés pour définir les heures
+      const startHour =
+        workingHours.length > 0
+          ? Math.min(...workingHours.map((item) => item.start_hour))
+          : defaultStartHour;
+      const endHour =
+        workingHours.length > 0
+          ? Math.max(...workingHours.map((item) => item.end_hour))
+          : defaultEndHour;
+
+      for (let i = startHour; i <= endHour; i++) {
+        const hour = i < 10 ? "0" + i : i; // Formater l'heure pour avoir toujours deux chiffres
+        const time = hour + ":00";
+
+        // Fonction pour vérifier si le créneau est disponible
+        const isUnavailable = isTimeUnavailableForDate(
+          time,
+          date,
+          employeeIds,
+          employeeDaysOff,
+          unavailableDays,
+          employeeDaysOffWeek,
+          employeeAvailablePeriods
+        );
+
+        timeList.push({ time, isUnavailable });
+      }
+
+      setTimeSlot(timeList);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des horaires :", error);
+    }
   };
+
   useEffect(() => {
     if (date) {
       getTime(date);

@@ -73,5 +73,71 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get("/working-hours", async (req, res) => {
+    try {
+        // Récupérer les horaires de travail depuis la table
+        const { data, error } = await supabase.from("working_hours").select("*");
+
+        if (error) {
+            throw error;
+        }
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des horaires de travail:', error.message);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+});
+
+// Route POST pour ajouter ou mettre à jour les horaires de travail
+router.post('/working-hours', async (req, res) => {
+    const { start_hour, end_hour } = req.body;
+
+    try {
+        // Vérifier s'il existe déjà des enregistrements d'horaires de travail
+        const { data: existingHours, error } = await supabase
+            .from('working_hours')
+            .select('id, start_hour, end_hour');
+
+        if (error) {
+            throw error;
+        }
+
+        if (existingHours && existingHours.length > 0) {
+            // S'il y a des enregistrements existants, gérer selon votre logique
+            // Par exemple, vous pouvez mettre à jour le premier enregistrement trouvé
+            const existingRecord = existingHours[0];
+            const { data: updatedHours, error: updateError } = await supabase
+                .from('working_hours')
+                .update({ start_hour, end_hour })
+                .eq('id', existingRecord.id)
+                .single(); // Utilisez .single() pour mettre à jour uniquement un enregistrement
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            res.status(200).json(updatedHours);
+        } else {
+            // Aucun enregistrement existant, insérer une nouvelle entrée
+            const { data: newHours, error: insertError } = await supabase
+                .from('working_hours')
+                .insert([{ start_hour, end_hour }])
+                .single();
+
+            if (insertError) {
+                throw insertError;
+            }
+
+            res.status(201).json(newHours);
+        }
+    } catch (error) {
+        console.error('Error adding or updating working hours:', error.message);
+        res.status(500).json({ error: 'Failed to add or update working hours' });
+    }
+});
+
+
+
 
 module.exports = router;
