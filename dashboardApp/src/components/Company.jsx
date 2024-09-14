@@ -48,7 +48,7 @@ export default function Company() {
     try {
       // Récupérer les horaires de travail depuis le backend
       const response = await axios.get(
-        "http://localhost:3000/available-dates/working-hours"
+        "https://appointment-fr.onrender.com/available-dates/working-hours"
       );
       const workingHours = response.data;
 
@@ -198,10 +198,13 @@ export default function Company() {
       return;
     }
     try {
-      await axios.post("http://localhost:3000/available-dates/working-hours", {
-        start_hour: selectedOpeningHour.split(":")[0],
-        end_hour: selectedClosingHour.split(":")[0],
-      });
+      await axios.post(
+        "https://appointment-fr.onrender.com/available-dates/working-hours",
+        {
+          start_hour: selectedOpeningHour.split(":")[0],
+          end_hour: selectedClosingHour.split(":")[0],
+        }
+      );
       toast({
         description: `Working hours saved successfully.`,
         status: "success",

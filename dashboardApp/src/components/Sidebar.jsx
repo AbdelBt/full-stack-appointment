@@ -216,7 +216,7 @@ export default function Sidebar({ handleLogout }) {
     try {
       // Récupérer les horaires de travail depuis le backend
       const response = await axios.get(
-        "http://localhost:3000/available-dates/working-hours"
+        "https://appointment-fr.onrender.com/available-dates/working-hours"
       );
       const workingHours = response.data;
 
