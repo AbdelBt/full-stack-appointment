@@ -91,21 +91,21 @@ router.get("/working-hours", async (req, res) => {
 
 // Route POST pour ajouter ou mettre à jour les horaires de travail
 router.post('/working-hours', async (req, res) => {
-    const { start_hour, end_hour } = req.body;
+    const { day_of_week, start_hour, end_hour } = req.body;
 
     try {
         // Vérifier s'il existe déjà des enregistrements d'horaires de travail
         const { data: existingHours, error } = await supabase
             .from('working_hours')
-            .select('id, start_hour, end_hour');
+            .select('id')
+            .eq('day_of_week', day_of_week);
 
         if (error) {
             throw error;
         }
 
         if (existingHours && existingHours.length > 0) {
-            // S'il y a des enregistrements existants, gérer selon votre logique
-            // Par exemple, vous pouvez mettre à jour le premier enregistrement trouvé
+            // Si des horaires existent pour ce jour, on met à jour
             const existingRecord = existingHours[0];
             const { data: updatedHours, error: updateError } = await supabase
                 .from('working_hours')
@@ -122,7 +122,7 @@ router.post('/working-hours', async (req, res) => {
             // Aucun enregistrement existant, insérer une nouvelle entrée
             const { data: newHours, error: insertError } = await supabase
                 .from('working_hours')
-                .insert([{ start_hour, end_hour }])
+                .insert([{ day_of_week, start_hour, end_hour }])
                 .single();
 
             if (insertError) {

@@ -7,6 +7,12 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import { DatePickerWithRange } from "./dateDispo";
 
@@ -17,10 +23,10 @@ export default function Company() {
   const [dateRange, setDateRange] = useState({ from: null, to: null });
   const [availableDates, setAvailableDates] = useState([]);
   const [timeSlot, setTimeSlot] = useState([]);
-  const [startHour, setStartHour] = useState(null);
-  const [endHour, setEndHour] = useState(null);
   const [selectedOpeningHour, setSelectedOpeningHour] = useState(null);
   const [selectedClosingHour, setSelectedClosingHour] = useState();
+  const [workingHours, setWorkingHours] = useState({});
+  const [selectedDay, setSelectedDay] = useState("Monday");
 
   useEffect(() => {
     const user = sessionStorage.getItem("user");
@@ -38,7 +44,6 @@ export default function Company() {
         "https://appointment-fr.onrender.com/available-dates"
       );
       setAvailableDates(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error("Error fetching available dates:", error);
     }
@@ -46,42 +51,31 @@ export default function Company() {
 
   const getTime = async () => {
     try {
-      // Récupérer les horaires de travail depuis le backend
       const response = await axios.get(
         "https://appointment-fr.onrender.com/available-dates/working-hours"
       );
-      const workingHours = response.data;
+      const workingHoursData = response.data;
 
-      // Création d'un tableau pour les créneaux horaires disponibles
+      const workingHoursMap = {};
+      workingHoursData.forEach((item) => {
+        workingHoursMap[item.day_of_week] = {
+          start_hour: item.start_hour,
+          end_hour: item.end_hour,
+        };
+      });
+
+      setWorkingHours(workingHoursMap);
+
       const timeList = [];
-
-      // Définir des heures globales par défaut si aucune information n'est trouvée
-      const defaultStartHour = 10;
-      const defaultEndHour = 18;
-
-      // Utiliser les horaires récupérés pour définir les heures
-      const start =
-        workingHours.length > 0
-          ? Math.min(...workingHours.map((item) => item.start_hour))
-          : defaultStartHour;
-      const end =
-        workingHours.length > 0
-          ? Math.max(...workingHours.map((item) => item.end_hour))
-          : defaultEndHour;
-
-      setStartHour(start);
-      setEndHour(end);
-
       for (let i = 10; i <= 18; i++) {
-        const hour = i < 10 ? "0" + i : i; // Formater l'heure pour avoir toujours deux chiffres
+        const hour = i < 10 ? "0" + i : i;
         const time = hour + ":00";
-
         timeList.push({ time });
       }
 
       setTimeSlot(timeList);
     } catch (error) {
-      console.error("Erreur lors de la récupération des horaires :", error);
+      console.error("Error fetching working hours:", error);
     }
   };
 
@@ -179,12 +173,47 @@ export default function Company() {
 
   const handleTimeSlotClick = (time) => {
     if (!selectedOpeningHour) {
+      // Sélectionner l'heure d'ouverture
       setSelectedOpeningHour(time);
+      setWorkingHours((prev) => ({
+        ...prev,
+        [selectedDay]: {
+          ...prev[selectedDay],
+          start_hour: time.split(":")[0],
+        },
+      }));
     } else if (!selectedClosingHour) {
-      setSelectedClosingHour(time);
+      // Sélectionner l'heure de fermeture
+      if (time >= selectedOpeningHour) {
+        setSelectedClosingHour(time);
+        setWorkingHours((prev) => ({
+          ...prev,
+          [selectedDay]: {
+            ...prev[selectedDay],
+            end_hour: time.split(":")[0],
+          },
+        }));
+      } else {
+        toast({
+          description: "The closing hour must be after the opening hour.",
+          status: "warning",
+          className: "bg-red-500",
+        });
+        setSelectedOpeningHour(null);
+        setSelectedClosingHour(null);
+      }
     } else {
+      // Réinitialiser la sélection
       setSelectedOpeningHour(time);
       setSelectedClosingHour(null);
+      setWorkingHours((prev) => ({
+        ...prev,
+        [selectedDay]: {
+          ...prev[selectedDay],
+          start_hour: time.split(":")[0],
+          end_hour: null,
+        },
+      }));
     }
   };
 
@@ -197,20 +226,32 @@ export default function Company() {
       });
       return;
     }
+
     try {
+      const updatedHours = {
+        ...workingHours,
+        [selectedDay]: {
+          start_hour: selectedOpeningHour.split(":")[0],
+          end_hour: selectedClosingHour.split(":")[0],
+        },
+      };
+
       await axios.post(
         "https://appointment-fr.onrender.com/available-dates/working-hours",
         {
+          day_of_week: selectedDay,
           start_hour: selectedOpeningHour.split(":")[0],
           end_hour: selectedClosingHour.split(":")[0],
         }
       );
+
       toast({
-        description: `Working hours saved successfully.`,
+        description: `Working hours saved successfully for ${selectedDay}.`,
         status: "success",
         className: "bg-[#008000]",
       });
-      getTime();
+
+      setWorkingHours(updatedHours);
       setSelectedOpeningHour(null);
       setSelectedClosingHour(null);
     } catch (error) {
@@ -266,59 +307,83 @@ export default function Company() {
         <div>
           <CardHeader className="space-y-1 mt-5">
             <CardTitle className="text-4xl font-bold mb-5">
-              Available Hours
+              Available Hours (week)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-2 border rounded-lg p-5 h-full w-full">
-              {timeSlot.map((item, index) => {
-                const [hour] = item.time.split(":");
-                const isStartHour = parseInt(hour, 10) === startHour;
-                const isEndHour = parseInt(hour, 10) === endHour;
+            <div className="flex justify-center border border-indigo-500 p-5 rounded shadow-2xl bg-black w-full items-center flex-col">
+              <Accordion type="single" collapsible className="w-full">
+                {[
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                  "Sunday",
+                ].map((day) => {
+                  const hours = workingHours[day] || {
+                    start_hour: "00",
+                    end_hour: "00",
+                  };
+                  const startTime = `${hours.start_hour}:00`;
+                  const endTime = `${hours.end_hour}:00`;
 
-                return (
-                  <div
-                    onClick={() => handleTimeSlotClick(item.time)}
-                    key={index}
-                    className={`p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center
-                      ${
-                        isStartHour || isEndHour
-                          ? "bg-primary text-white"
-                          : item.isUnavailable
-                          ? "bg-red-300 text-gray-600 cursor-not-allowed"
-                          : item.time === selectedOpeningHour ||
-                            item.time === selectedClosingHour
-                          ? "bg-primary text-white"
-                          : ""
-                      }`}
-                  >
-                    {item.time}
+                  return (
+                    <AccordionItem value={day} key={day}>
+                      <AccordionTrigger onClick={() => setSelectedDay(day)}>
+                        {day}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-3 gap-2 p-5 h-full w-full">
+                          {timeSlot.map((item, index) => {
+                            const isSelectedOpeningHour =
+                              item.time === startTime;
+                            const isSelectedClosingHour = item.time === endTime;
 
-                    {item.time === selectedOpeningHour && (
-                      <span className="ml-2 text-green-300">Opening</span>
-                    )}
-                    {item.time === selectedClosingHour && (
-                      <span className="ml-2 text-red-300">Closing</span>
-                    )}
-                    {item.time === selectedOpeningHour ||
-                      (isStartHour && (
-                        <span className="ml-2 text-green-300">Opening</span>
-                      ))}
-
-                    {item.time === selectedClosingHour ||
-                      (isEndHour && (
-                        <span className="ml-2 text-red-300">Closing</span>
-                      ))}
-                  </div>
-                );
-              })}
+                            return (
+                              <div
+                                onClick={() => handleTimeSlotClick(item.time)}
+                                key={index}
+                                className={`p-2 cursor-pointer border rounded-lg flex justify-center items-center text-center ${
+                                  isSelectedOpeningHour || isSelectedClosingHour
+                                    ? "bg-primary text-white"
+                                    : ""
+                                }`}
+                              >
+                                {item.time}
+                                {isSelectedOpeningHour && (
+                                  <span className="ml-2 text-green-300">
+                                    Opening
+                                  </span>
+                                )}
+                                {isSelectedClosingHour && (
+                                  <span className="ml-2 text-red-300">
+                                    Closing
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-5">
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDay(day);
+                              handleSaveTimes();
+                            }}
+                          >
+                            Save Times for {day}
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
             </div>
           </CardContent>
-          <div className="mt-5">
-            <Button type="button" onClick={handleSaveTimes}>
-              Save Times
-            </Button>
-          </div>
           <Toaster />
         </div>
       </div>

@@ -220,6 +220,16 @@ export default function Sidebar({ handleLogout }) {
       );
       const workingHours = response.data;
 
+      // Assurez-vous que date est définie et correspond au jour sélectionné
+      const selectedDay = new Date(date).toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
+      // Filtrer les horaires pour le jour sélectionné
+      const dayHours = workingHours.find(
+        (item) => item.day_of_week === selectedDay
+      );
+
       // Création d'un tableau pour les créneaux horaires disponibles
       const timeList = [];
 
@@ -228,14 +238,8 @@ export default function Sidebar({ handleLogout }) {
       const defaultEndHour = 18;
 
       // Utiliser les horaires récupérés pour définir les heures
-      const startHour =
-        workingHours.length > 0
-          ? Math.min(...workingHours.map((item) => item.start_hour))
-          : defaultStartHour;
-      const endHour =
-        workingHours.length > 0
-          ? Math.max(...workingHours.map((item) => item.end_hour))
-          : defaultEndHour;
+      const startHour = dayHours ? dayHours.start_hour : defaultStartHour;
+      const endHour = dayHours ? dayHours.end_hour : defaultEndHour;
 
       for (let i = startHour; i <= endHour; i++) {
         const hour = i < 10 ? "0" + i : i; // Formater l'heure pour avoir toujours deux chiffres
