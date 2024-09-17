@@ -90,11 +90,16 @@ export default function Sidebar({ handleLogout }) {
           "https://appointment-fr.onrender.com/available-dates"
         );
         if (availableDatesResponse.data.length > 0) {
-          const { from_date, to_date } = availableDatesResponse.data[0];
+          let { from_date, to_date } = availableDatesResponse.data[0];
+          let fromDate = new Date(from_date);
+          const toDate = new Date(to_date);
+          fromDate.setDate(fromDate.getDate() - 1);
+
           setAvailableDateRange({
-            from: new Date(from_date),
-            to: new Date(to_date),
+            from: new Date(fromDate),
+            to: new Date(toDate),
           });
+          console.log(availableDateRange);
         }
       }
     } catch (error) {

@@ -129,6 +129,12 @@ export default function Company() {
   const handleChangeAvailableDates = async () => {
     console.log("Selected date range:", dateRange);
 
+    const fromDate = new Date(dateRange.from);
+    const toDate = new Date(dateRange.to);
+
+    toDate.setHours(23, 0, 0, 0); // Set hours to 23, minutes to 0, seconds to 0, milliseconds to 0
+    fromDate.setHours(6, 0, 0, 0);
+
     const fromDateStr = `${dateRange.from.toLocaleDateString("en-EN", {
       weekday: "long",
       day: "numeric",
@@ -152,8 +158,8 @@ export default function Company() {
 
     try {
       await axios.post("https://appointment-fr.onrender.com/available-dates", {
-        from_date: dateRange.from,
-        to_date: dateRange.to,
+        from_date: fromDate.toISOString(), // Convertir en format ISO
+        to_date: toDate.toISOString(), // Convertir en format ISO
       });
       toast({
         description: `Dates added successfully from ${fromDateStr} to ${toDateStr}`,
