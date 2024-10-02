@@ -137,6 +137,70 @@ router.post('/working-hours', async (req, res) => {
     }
 });
 
+router.post('/special-days', async (req, res) => {
+    const { date, opening_hour, closing_hour } = req.body;
+
+    try {
+        // Vérifier s'il existe déjà des enregistrements pour ce jour spécial
+        const { data: existingSpecialDay, error } = await supabase
+            .from('special_days')
+            .select('id')
+            .eq('date', date);
+
+        if (error) {
+            throw error;
+        }
+
+        if (existingSpecialDay && existingSpecialDay.length > 0) {
+            // Si un enregistrement existe pour cette date, on met à jour
+            const existingRecord = existingSpecialDay[0];
+            const { data: updatedSpecialDay, error: updateError } = await supabase
+                .from('special_days')
+                .update({ opening_hour, closing_hour })
+                .eq('id', existingRecord.id)
+                .single();
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            res.status(200).json(updatedSpecialDay);
+        } else {
+            // Aucun enregistrement existant, insérer une nouvelle entrée
+            const { data: newSpecialDay, error: insertError } = await supabase
+                .from('special_days')
+                .insert([{ date, opening_hour, closing_hour }])
+                .single();
+
+            if (insertError) {
+                throw insertError;
+            }
+
+            res.status(201).json(newSpecialDay);
+        }
+    } catch (error) {
+        console.error('Error adding or updating special day:', error.message);
+        res.status(500).json({ error: 'Failed to add or update special day' });
+    }
+});
+
+// Route GET pour récupérer tous les jours spéciaux
+router.get('/special-days', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('special_days')
+            .select('*');
+
+        if (error) {
+            throw error;
+        }
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error fetching special days:', error.message);
+        res.status(500).json({ error: 'Failed to fetch special days' });
+    }
+});
 
 
 

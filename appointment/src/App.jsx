@@ -57,20 +57,23 @@ function App() {
   const fetchDays = async () => {
     try {
       const response = await axios.get(
-        "https://appointment-fr.onrender.com/indisponibilities"
+        "https://appointment-fr-12d3.onrender.com/indisponibilities"
       );
       if (response.data.length > 0) {
         // eslint-disable-next-line no-unused-vars
         const { id, ...days } = response.data[0]; // Exclure l'ID
         setDays(days); // Mettre à jour l'état avec les jours non disponibles
         const availableDatesResponse = await axios.get(
-          "https://appointment-fr.onrender.com/available-dates"
+          "https://appointment-fr-12d3.onrender.com/available-dates"
         );
         if (availableDatesResponse.data.length > 0) {
-          const { from_date, to_date } = availableDatesResponse.data[0];
+          let { from_date, to_date } = availableDatesResponse.data[0];
+          let fromDate = new Date(from_date);
+          const toDate = new Date(to_date);
+          fromDate.setDate(fromDate.getDate() - 1);
           setAvailableDateRange({
-            from: new Date(from_date),
-            to: new Date(to_date),
+            from: new Date(fromDate),
+            to: new Date(toDate),
           });
         }
       }
@@ -82,7 +85,7 @@ function App() {
   const fetchUnavailableDays = async () => {
     try {
       const response = await axios.get(
-        "https://appointment-fr.onrender.com/reserve"
+        "https://appointment-fr-12d3.onrender.com/reserve"
       );
       const { reservations, employeeIds } = response.data;
       const filteredEmployeeIds = employeeIds.filter((id) => id); // Supprime les valeurs null, undefined et vides
@@ -97,7 +100,7 @@ function App() {
   const fetchEmployeeDaysoffWeek = async () => {
     try {
       const response = await axios.get(
-        "https://appointment-fr.onrender.com/employee/days/all"
+        "https://appointment-fr-12d3.onrender.com/employee/days/all"
       );
       const daysOffWeekData = response.data;
 
@@ -119,7 +122,7 @@ function App() {
   const fetchEmployeeAvailablePeriods = async () => {
     try {
       const response = await axios.get(
-        "https://appointment-fr.onrender.com/employee/all"
+        "https://appointment-fr-12d3.onrender.com/employee/all"
       );
       const availablePeriodsData = response.data;
 
@@ -147,7 +150,7 @@ function App() {
   const fetchEmployeeDaysOff = async () => {
     try {
       const response = await axios.get(
-        "https://appointment-fr.onrender.com/employee/days-off/all"
+        "https://appointment-fr-12d3.onrender.com/employee/days-off/all"
       );
       const daysOffData = response.data.daysOff;
 
@@ -175,7 +178,7 @@ function App() {
       if (window.location.href.includes("success")) {
         try {
           const response = await axios.get(
-            `https://appointment-fr.onrender.com/success?session_id=${sessionId}`
+            `https://appointment-fr-12d3.onrender.com/success?session_id=${sessionId}`
           );
           const reservationData = response.data.reservation;
 
@@ -199,7 +202,7 @@ function App() {
           if (!reservationCompleted) {
             // Soumettre la réservation au backend
             await axios.post(
-              "https://appointment-fr.onrender.com/reserve",
+              "https://appointment-fr-12d3.onrender.com/reserve",
               reservationData
             );
             // Mettre à jour reservationCompleted dans sessionStorage
@@ -267,7 +270,7 @@ function App() {
     const fetchServices = async () => {
       try {
         const response = await axios.get(
-          "https://appointment-fr.onrender.com/services"
+          "https://appointment-fr-12d3.onrender.com/services"
         );
         setServices(response.data);
       } catch (error) {
@@ -278,24 +281,57 @@ function App() {
     fetchServices();
   }, []);
 
-  const getTime = () => {
-    const timeList = [];
-    for (let i = 9; i <= 21; i++) {
-      const hour = i < 10 ? "0" + i : i; // Format hour to always be two digits
-      const time = hour + ":00";
-      const isUnavailable = isTimeUnavailableForDate(
-        time,
-        date,
-        employeeIds,
-        employeeDaysOff,
-        unavailableDays,
-        employeeDaysOffWeek,
-        employeeAvailablePeriods
+  const getTime = async () => {
+    try {
+      // Récupérer les horaires de travail depuis le backend
+      const response = await axios.get(
+        "https://appointment-fr-12d3.onrender.com/available-dates/working-hours"
       );
-      timeList.push({ time, isUnavailable });
-    }
+      const workingHours = response.data;
 
-    setTimeSlot(timeList);
+      // Assurez-vous que date est définie et correspond au jour sélectionné
+      const selectedDay = new Date(date).toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
+      // Filtrer les horaires pour le jour sélectionné
+      const dayHours = workingHours.find(
+        (item) => item.day_of_week === selectedDay
+      );
+
+      // Création d'un tableau pour les créneaux horaires disponibles
+      const timeList = [];
+
+      // Définir des heures globales par défaut si aucune information n'est trouvée
+      const defaultStartHour = 10;
+      const defaultEndHour = 18;
+
+      // Utiliser les horaires récupérés pour définir les heures
+      const startHour = dayHours ? dayHours.start_hour : defaultStartHour;
+      const endHour = dayHours ? dayHours.end_hour : defaultEndHour;
+
+      for (let i = startHour; i <= endHour; i++) {
+        const hour = i < 10 ? "0" + i : i; // Formater l'heure pour avoir toujours deux chiffres
+        const time = hour + ":00";
+
+        // Fonction pour vérifier si le créneau est disponible
+        const isUnavailable = isTimeUnavailableForDate(
+          time,
+          date,
+          employeeIds,
+          employeeDaysOff,
+          unavailableDays,
+          employeeDaysOffWeek,
+          employeeAvailablePeriods
+        );
+
+        timeList.push({ time, isUnavailable });
+      }
+
+      setTimeSlot(timeList);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des horaires :", error);
+    }
   };
 
   useEffect(() => {
@@ -467,7 +503,7 @@ function App() {
 
     try {
       const sessionResponse = await axios.post(
-        "https://appointment-fr.onrender.com/create-checkout-session",
+        "https://appointment-fr-12d3.onrender.com/create-checkout-session",
         {
           reservationData: {
             service: service,
