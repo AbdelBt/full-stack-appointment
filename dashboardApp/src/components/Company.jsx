@@ -384,7 +384,7 @@ export default function Company() {
   const handleDeleteSpecialTimes = async (day) => {
     try {
       await axios.delete(
-        `http://localhost:3000/available-dates/special-days/${day}`
+        `https://appointment-fr-12d3.onrender.com/available-dates/special-days/${day}`
       );
       await fetchSpecialDays();
       toast({
