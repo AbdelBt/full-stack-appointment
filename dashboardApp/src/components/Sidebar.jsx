@@ -225,10 +225,27 @@ export default function Sidebar({ handleLogout }) {
       );
       const workingHours = response.data;
 
+      const specialDaysResponse = await axios.get(
+        "https://appointment-fr-12d3.onrender.com/available-dates/special-days"
+      );
+      const specialDays = specialDaysResponse.data;
+
       // Assurez-vous que date est définie et correspond au jour sélectionné
-      const selectedDay = new Date(date).toLocaleDateString("en-US", {
+      const selectedDate = new Date(date);
+      const selectedDay = selectedDate.toLocaleDateString("en-US", {
         weekday: "long",
       });
+
+      const selectedDateFormatted = new Date(
+        new Date(date).setDate(new Date(date).getDate() + 1)
+      )
+        .toISOString()
+        .split("T")[0];
+
+      // Check if the selected date is a special day
+      const specialDay = specialDays.find(
+        (day) => day.date === selectedDateFormatted
+      );
 
       // Filtrer les horaires pour le jour sélectionné
       const dayHours = workingHours.find(
@@ -238,13 +255,17 @@ export default function Sidebar({ handleLogout }) {
       // Création d'un tableau pour les créneaux horaires disponibles
       const timeList = [];
 
-      // Définir des heures globales par défaut si aucune information n'est trouvée
-      const defaultStartHour = 10;
-      const defaultEndHour = 18;
-
       // Utiliser les horaires récupérés pour définir les heures
-      const startHour = dayHours ? dayHours.start_hour : defaultStartHour;
-      const endHour = dayHours ? dayHours.end_hour : defaultEndHour;
+      const startHour = specialDay
+        ? parseInt(specialDay.opening_hour)
+        : dayHours
+        ? dayHours.start_hour
+        : 10;
+      const endHour = specialDay
+        ? parseInt(specialDay.closing_hour)
+        : dayHours
+        ? dayHours.end_hour
+        : 22;
 
       for (let i = startHour; i <= endHour; i++) {
         const hour = i < 10 ? "0" + i : i; // Formater l'heure pour avoir toujours deux chiffres

@@ -202,6 +202,27 @@ router.get('/special-days', async (req, res) => {
     }
 });
 
+// Route GET pour supprimer un jour spéciale
+router.delete('/special-days/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data, error } = await supabase
+            .from('special_days')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            throw error;
+        }
+
+        res.status(200).json({ message: 'special-days deleted successfully' });
+    } catch (error) {
+        console.error('Error fetching special days:', error.message);
+        res.status(500).json({ error: 'Failed to fetch special days' });
+    }
+});
+
 
 
 module.exports = router;

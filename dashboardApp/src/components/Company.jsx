@@ -7,7 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -29,13 +29,8 @@ export default function Company() {
   const [workingHours, setWorkingHours] = useState({});
   const [selectedDay, setSelectedDay] = useState("Monday");
   const [specialDate, setSpecialDate] = useState(null);
-  const [specialOpeningHour, setSpecialOpeningHour] = useState(null);
-  const [specialClosingHour, setSpecialClosingHour] = useState(null);
   const [specialDays, setSpecialDays] = useState([]);
-  const [selectedSpecialOpeningHour, setSelectedSpecialOpeningHour] =
-    useState(null);
-  const [selectedSpecialClosingHour, setSelectedSpecialClosingHour] =
-    useState();
+  const [specialDayHours, setSpecialDayHours] = useState({});
 
   useEffect(() => {
     const user = sessionStorage.getItem("user");
@@ -81,7 +76,19 @@ export default function Company() {
       const response = await axios.get(
         "https://appointment-fr-12d3.onrender.com/available-dates/special-days"
       );
-      setSpecialDays(response.data); // Assuming the API returns an array of special days with date and times
+      const specialDaysData = response.data;
+      specialDaysData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Initialize hours for each special day
+      const initialHours = {};
+      specialDaysData.forEach((day) => {
+        initialHours[day.date] = {
+          openingHour: day.opening_hour.slice(0, 5),
+          closingHour: day.closing_hour.slice(0, 5),
+        };
+      });
+
+      setSpecialDayHours(initialHours); // Store the hours for each special day
+      setSpecialDays(specialDaysData); // Store special days
     } catch (error) {
       console.error("Error fetching special days:", error);
     }
@@ -242,59 +249,73 @@ export default function Company() {
     }
   };
 
-  const handleSpecialTimeSlotClick = (time) => {
-    console.log("Clicked Time:", time);
+  const handleSpecialTimeSlotClick = (time, date) => {
+    const currentHours = specialDayHours[date] || {
+      openingHour: null,
+      closingHour: null,
+    };
+    const openingHour = currentHours.openingHour;
+    const closingHour = currentHours.closingHour;
 
-    const openingHour = selectedSpecialOpeningHour; // Utiliser l'état actuel
-    const closingHour = selectedSpecialClosingHour; // Utiliser l'état actuel
-
-    console.log("Current Opening Hour:", openingHour);
-    console.log("Current Closing Hour:", closingHour);
-
-    // Si aucune heure d'ouverture n'a été sélectionnée, définir l'heure d'ouverture
+    // Logic for setting opening and closing hours
     if (!openingHour) {
-      console.log("Setting Opening Hour to:", time);
-      setSelectedSpecialOpeningHour(time);
-      setSelectedSpecialClosingHour(null); // Réinitialiser l'heure de fermeture
-    }
-    // Si une heure d'ouverture est sélectionnée mais aucune heure de fermeture
-    else if (!closingHour) {
-      console.log("Selected Opening Hour is:", openingHour);
+      setSpecialDayHours((prev) => ({
+        ...prev,
+        [date]: { openingHour: time, closingHour: null },
+      }));
+    } else if (!closingHour) {
       if (time >= openingHour) {
-        console.log("Setting Closing Hour to:", time);
-        setSelectedSpecialClosingHour(time);
+        setSpecialDayHours((prev) => ({
+          ...prev,
+          [date]: { ...prev[date], closingHour: time },
+        }));
       } else {
-        // Réinitialiser les deux si l'heure de fermeture est avant l'heure d'ouverture
-        console.warn("Closing hour must be after opening hour.");
         toast({
           description: "Closing hour must be after opening hour.",
           status: "warning",
           className: "bg-red-500",
         });
-        setSelectedSpecialOpeningHour(null);
-        setSelectedSpecialClosingHour(null);
+        setSpecialDayHours((prev) => ({
+          ...prev,
+          [date]: { openingHour: null, closingHour: null },
+        }));
       }
-    }
-    // Si les deux heures sont déjà sélectionnées, réinitialiser et sélectionner une nouvelle heure d'ouverture
-    else {
-      console.log("Both Opening and Closing Hours are selected.");
-      // Désélectionner soit l'heure d'ouverture soit l'heure de fermeture
+    } else {
       if (time === openingHour) {
         console.log("Deselecting Opening Hour:", openingHour);
-        setSelectedSpecialOpeningHour(null);
+        setSpecialDayHours((prev) => ({
+          ...prev,
+          [date]: { ...prev[date], openingHour: null },
+        }));
       } else if (time === closingHour) {
-        console.log("Deselecting Closing Hour:", closingHour);
-        setSelectedSpecialClosingHour(null);
+        setSpecialDayHours((prev) => ({
+          ...prev,
+          [date]: { ...prev[date], closingHour: null },
+        }));
       } else {
-        console.log("Setting a new Opening Hour to:", time);
-        setSelectedSpecialOpeningHour(time);
-        setSelectedSpecialClosingHour(null);
+        setSpecialDayHours((prev) => ({
+          ...prev,
+          [date]: { openingHour: time, closingHour: null },
+        }));
       }
     }
   };
 
-  const handleSaveSpecialTimes = async () => {
-    if (!specialOpeningHour || !specialClosingHour || !specialDate) {
+  const handleSaveSpecialTimes = async (date) => {
+    const currentHours = specialDayHours[date];
+
+    const addOneDay = (date) => {
+      let newDate = new Date(date);
+      newDate.setDate(newDate.getDate() + 1);
+      return newDate;
+    };
+
+    if (
+      !currentHours ||
+      !currentHours.openingHour ||
+      !currentHours.closingHour ||
+      !date
+    ) {
       toast({
         description: "Please select both opening and closing hours and a date.",
         status: "warning",
@@ -307,26 +328,74 @@ export default function Company() {
       await axios.post(
         "https://appointment-fr-12d3.onrender.com/available-dates/special-days",
         {
-          date: specialDate, // Utilisez l'état `specialDate` pour la date du jour spécial
-          opening_hour: specialOpeningHour + ":00",
-          closing_hour: specialClosingHour + ":00",
+          date: addOneDay(date),
+          opening_hour: currentHours.openingHour + ":00",
+          closing_hour: currentHours.closingHour + ":00",
         }
       );
       await fetchSpecialDays();
       toast({
-        description: `Special day hours saved successfully.`,
+        description: `Special day hours saved successfully for ${new Date(
+          date
+        ).toLocaleDateString()}.`,
         status: "success",
         className: "bg-[#008000]",
       });
-
-      // Réinitialiser les heures sélectionnées après la sauvegarde
-      setSpecialOpeningHour(null);
-      setSpecialClosingHour(null);
-      setSpecialDate(null);
     } catch (error) {
       console.error("Error saving special day hours:", error);
       toast({
         description: `Failed to save special day hours.`,
+        status: "error",
+        className: "bg-[#ff0000]",
+      });
+    }
+  };
+
+  const handleChangeSpecialTimes = async (date) => {
+    const currentHours = specialDayHours[date];
+
+    try {
+      await axios.post(
+        "https://appointment-fr-12d3.onrender.com/available-dates/special-days",
+        {
+          date: date,
+          opening_hour: currentHours.openingHour + ":00",
+          closing_hour: currentHours.closingHour + ":00",
+        }
+      );
+      await fetchSpecialDays();
+      toast({
+        description: `Special day hours saved successfully for ${new Date(
+          date
+        ).toLocaleDateString()}.`,
+        status: "success",
+        className: "bg-[#008000]",
+      });
+    } catch (error) {
+      console.error("Error saving special day hours:", error);
+      toast({
+        description: `Failed to save special day hours.`,
+        status: "error",
+        className: "bg-[#ff0000]",
+      });
+    }
+  };
+
+  const handleDeleteSpecialTimes = async (day) => {
+    try {
+      await axios.delete(
+        `http://localhost:3000/available-dates/special-days/${day}`
+      );
+      await fetchSpecialDays();
+      toast({
+        description: `Special day hours deleted successfully for`,
+        status: "success",
+        className: "bg-[#008000]",
+      });
+    } catch (error) {
+      console.error("Error deleted special day hours:", error);
+      toast({
+        description: `Failed to deleted special day hours.`,
         status: "error",
         className: "bg-[#ff0000]",
       });
@@ -515,83 +584,42 @@ export default function Company() {
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="special-days">
                     <AccordionTrigger>
-                      <div className=" w-full flex justify-center">
+                      <div className="w-full flex justify-center">
                         <div className="flex justify-center gap-2 p-1 px-10 bg-primary rounded w-fit">
                           <Plus /> Add Special Day
                         </div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="grid grid-cols-3 gap-2 h-full w-full">
-                        {timeSlot?.map((item, index) => (
-                          <div
-                            key={index}
-                            onClick={() =>
-                              handleSpecialTimeSlotClick(item.time)
-                            }
-                            className={`p-1 cursor-pointer border rounded-lg flex justify-center items-center text-center ${
-                              item.time === specialOpeningHour ||
-                              item.time === specialClosingHour
-                                ? "bg-primary text-white"
-                                : ""
-                            }`}
-                          >
-                            {item.time}
-                            {item.time === specialOpeningHour && (
-                              <span className="ml-2 text-green-300">
-                                Opening
-                              </span>
-                            )}
-                            {item.time === specialClosingHour && (
-                              <span className="ml-2 text-red-300">Closing</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
                       <div className="flex flex-col">
-                        <div>
-                          <DatePickerDemo onSelect={setSpecialDate} />
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleSaveSpecialTimes}
-                          className="mt-5"
-                        >
-                          Save Special Day Times
-                        </Button>
+                        <DatePickerDemo onSelect={setSpecialDate} />
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  {specialDays?.map((day, dayIndex) => (
-                    <AccordionItem
-                      key={dayIndex}
-                      value={`special-day-${dayIndex}`}
-                    >
-                      <AccordionTrigger>
-                        <div className="w-full">
-                          {new Date(day.date).toLocaleDateString()}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid grid-cols-3 gap-2 h-full w-full">
-                          {timeSlot.map((item, index) => {
-                            const openingHour = day.opening_hour;
-                            const closingHour = day.closing_hour;
-                            console.log(openingHour);
+
+                      {/* Only show time slots if a date is selected */}
+                      {specialDate && (
+                        <div className="grid grid-cols-3 gap-2 h-full w-full mt-4">
+                          {timeSlot?.map((item, index) => {
+                            const currentDate = specialDate;
+                            const currentHours = specialDayHours[
+                              currentDate
+                            ] || {
+                              openingHour: null,
+                              closingHour: null,
+                            };
 
                             const isSelectedSpecialOpeningHour =
-                              item.time === selectedSpecialOpeningHour ||
-                              item.time === openingHour.slice(0, 5);
-
+                              item.time === currentHours.openingHour;
                             const isSelectedSpecialClosingHour =
-                              item.time === selectedSpecialClosingHour ||
-                              item.time === closingHour.slice(0, 5);
+                              item.time === currentHours.closingHour;
 
                             return (
                               <div
                                 key={index}
                                 onClick={() =>
-                                  handleSpecialTimeSlotClick(item.time)
+                                  handleSpecialTimeSlotClick(
+                                    item.time,
+                                    currentDate
+                                  )
                                 }
                                 className={`p-1 cursor-pointer border rounded-lg flex justify-center items-center text-center ${
                                   isSelectedSpecialOpeningHour ||
@@ -615,18 +643,89 @@ export default function Company() {
                             );
                           })}
                         </div>
-                        <div className="mt-5">
-                          <Button
-                            type="button"
-                            onClick={() => handleSaveSpecialTimes()}
-                          >
-                            Save Special Times for{" "}
+                      )}
+
+                      <Button
+                        type="button"
+                        onClick={() => handleSaveSpecialTimes(specialDate)}
+                        className="mt-5"
+                      >
+                        Save Special Day Times
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {specialDays?.map((day, dayIndex) => {
+                    const date = day.date; // Use the date to access hours
+                    const currentHours = specialDayHours[date] || {
+                      openingHour: null,
+                      closingHour: null,
+                    };
+
+                    return (
+                      <AccordionItem
+                        key={dayIndex}
+                        value={`special-day-${dayIndex}`}
+                      >
+                        <AccordionTrigger>
+                          <div className="flex  justify-center  gap-5 items-center w-full">
                             {new Date(day.date).toLocaleDateString()}
-                          </Button>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                            <Trash2
+                              className=" text-red-500 cursor-pointer hover:scale-150"
+                              size={20}
+                              onClick={() => handleDeleteSpecialTimes(day.id)}
+                            />
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-3 gap-2 h-full w-full">
+                            {timeSlot.map((item, index) => {
+                              const isSelectedSpecialOpeningHour =
+                                item.time === currentHours.openingHour;
+                              const isSelectedSpecialClosingHour =
+                                item.time === currentHours.closingHour;
+
+                              return (
+                                <div
+                                  key={index}
+                                  onClick={() =>
+                                    handleSpecialTimeSlotClick(item.time, date)
+                                  } // Pass the date
+                                  className={`p-1 cursor-pointer border rounded-lg flex justify-center items-center text-center ${
+                                    isSelectedSpecialOpeningHour ||
+                                    isSelectedSpecialClosingHour
+                                      ? "bg-primary text-white"
+                                      : ""
+                                  }`}
+                                >
+                                  {item.time}
+                                  {isSelectedSpecialOpeningHour && (
+                                    <span className="ml-2 text-green-300">
+                                      Opening
+                                    </span>
+                                  )}
+                                  {isSelectedSpecialClosingHour && (
+                                    <span className="ml-2 text-red-300">
+                                      Closing
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-5">
+                            <Button
+                              type="button"
+                              onClick={() => handleChangeSpecialTimes(day.date)}
+                            >
+                              Save Special Times for{" "}
+                              {new Date(day.date).toLocaleDateString()}
+                            </Button>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
                 </Accordion>
               </div>
             </CardContent>
